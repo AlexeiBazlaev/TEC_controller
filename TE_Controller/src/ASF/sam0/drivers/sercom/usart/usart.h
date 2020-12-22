@@ -997,19 +997,20 @@ static inline void usart_unlock(struct usart_module *const module)
  * \retval false  Peripheral is not busy syncing and can be read/written without
  *                stalling the bus
  */
+//__attribute__((optimize("O0")))
 static inline bool usart_is_syncing(
-		const struct usart_module *const module)
+		const struct usart_module *const module) 
 {
 	/* Sanity check arguments */
 	Assert(module);
 	Assert(module->hw);
 
-	SercomUsart *const usart_hw = &(module->hw->USART);
-
+	SercomUsart usart_hw = module->hw->USART;//SercomUsart *const usart_hw = &(module->hw->USART);
+	uint32_t reg = usart_hw.SYNCBUSY.reg;
 #ifdef FEATURE_USART_SYNC_SCHEME_V2
-	return (usart_hw->SYNCBUSY.reg);
+	return (reg);
 #else
-	return (usart_hw->STATUS.reg & SERCOM_USART_STATUS_SYNCBUSY);
+	return (reg & SERCOM_USART_STATUS_SYNCBUSY);
 #endif
 }
 

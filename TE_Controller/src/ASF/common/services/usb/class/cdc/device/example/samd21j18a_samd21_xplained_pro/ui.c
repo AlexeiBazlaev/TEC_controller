@@ -145,12 +145,12 @@ void ui_com_overflow(void)
 
 void ui_process(uint16_t framenumber)
 {
-	if ((framenumber % 1000) == 0) {
+	/*if ((framenumber % 1000) == 0) {
 		LED_On(LED_0_PIN);
 	}
 	if ((framenumber % 1000) == 500) {
 		LED_Off(LED_0_PIN);
-	}
+	}*/
 }
 
 /**

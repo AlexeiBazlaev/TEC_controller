@@ -55,10 +55,10 @@ void Dummy_Handler(void);
 
 /* Cortex-M0+ core handlers */
 void NMI_Handler             ( void ) __attribute__ ((weak, alias("Dummy_Handler")));
-//void HardFault_Handler       ( void ) __attribute__ ((weak, alias("Dummy_Handler")));
-//void SVC_Handler             ( void ) __attribute__ ((weak, alias("Dummy_Handler")));
-//void PendSV_Handler          ( void ) __attribute__ ((weak, alias("Dummy_Handler")));
-//void SysTick_Handler         ( void ) __attribute__ ((weak, alias("Dummy_Handler")));
+void HardFault_Handler       ( void ) __attribute__ ((weak));
+void SVC_Handler             ( void ) __attribute__ ((weak));
+void PendSV_Handler          ( void ) __attribute__ ((weak));
+void SysTick_Handler         ( void ) __attribute__ ((weak));
 
 /* Peripherals handlers */
 void PM_Handler              ( void ) __attribute__ ((weak, alias("Dummy_Handler")));

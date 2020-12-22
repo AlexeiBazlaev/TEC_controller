@@ -62,9 +62,9 @@
 //	(USB_CONFIG_ATTR_REMOTE_WAKEUP|USB_CONFIG_ATTR_BUS_POWERED)
 
 //! USB Device string definitions (Optional)
-#define  USB_DEVICE_MANUFACTURE_NAME      "ATMEL ASF"
-#define  USB_DEVICE_PRODUCT_NAME          "CDC Virtual Com"
-// #define  USB_DEVICE_SERIAL_NAME           "12...EF"
+#define  USB_DEVICE_MANUFACTURE_NAME      "Svyazcom LLC"//"ATMEL ASF"
+#define  USB_DEVICE_PRODUCT_NAME          "RealSense box controller"//"CDC Virtual Com"
+#define  USB_DEVICE_SERIAL_NAME           "00000000"
 
 
 /**
@@ -122,9 +122,9 @@
 //! Interface callback definition
 #define  UDI_CDC_ENABLE_EXT(port)         main_cdc_enable(port)
 #define  UDI_CDC_DISABLE_EXT(port)        main_cdc_disable(port)
-#define  UDI_CDC_RX_NOTIFY(port)          uart_rx_notify(port)
+#define  UDI_CDC_RX_NOTIFY(port)          //uart_rx_notify(port)
 #define  UDI_CDC_TX_EMPTY_NOTIFY(port)
-#define  UDI_CDC_SET_CODING_EXT(port,cfg) uart_config(port,cfg)
+#define  UDI_CDC_SET_CODING_EXT(port,cfg) //uart_config(port,cfg)
 #define  UDI_CDC_SET_DTR_EXT(port,set)    main_cdc_set_dtr(port,set)
 #define  UDI_CDC_SET_RTS_EXT(port,set)
 

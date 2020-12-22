@@ -38,6 +38,7 @@
 #include "conf_usb.h"
 #include "ui.h"
 #include "uart.h"
+#include <string.h>
 
 static volatile bool main_b_cdc_enable = false;
 void prvGetRegistersFromStack (uint32_t *pulFaultStackAddress);
@@ -70,7 +71,7 @@ int main(void)
 	InitTask_cdc_rx_check();
 	// Init LED
 	InitTask_led_blink();
-	ui_init();//ui_powerdown();
+	//ui_init();//ui_powerdown();
 	
 	vTaskStartScheduler();
 	while(true){
@@ -80,9 +81,23 @@ int main(void)
 
 void Task_cdc_rx_check(void *parameters)
 {
+	#define PORT0  0
 	//volatile uint8_t led = 1;
+	char rcvBuff[128] = {0};	
+	char *pStr = rcvBuff;
+	int len = 0;
 	while(true)
-	{
+	{		
+		while(udi_cdc_multi_is_rx_ready(PORT0))
+		{			
+			len += sprintf(pStr++, "%c", udi_cdc_multi_getc(PORT0));			
+		}
+		if(len>0)
+		{
+			printf("<%s\n", rcvBuff);
+			len=0;
+			pStr = rcvBuff;
+		}
 		//cdc_rx_check();		
 		
 /*#if !defined (DEBUG_CPU_IRQ_DISABLE)		
@@ -120,9 +135,9 @@ void Task_led_blink(void *parameters)
 	
 	while(1)
 	{
-		printf("%u sec\n\r", cnt++);//// stdio_usb_putchar (NULL, "data");//
+		printf(">%u sec\n\r", 10*(cnt++));//// stdio_usb_putchar (NULL, "data");//		
+		vTaskDelay(10000);
 		LED_Toggle(LED_PIN);
-		vTaskDelay(1000);
 		/*if((c1 % 50000) == 0){
 			//periodic_event_1s();
 			if(!stdio_cdc_opened){
