@@ -50,15 +50,9 @@ char str[128] = {0};
 UBaseType_t uxHighWaterMark_cdc_rx_check;
 UBaseType_t uxHighWaterMark_led_blink;
 static volatile bool main_b_cdc_enable = false;
+struct measured_params	m_params;
 
-void prvGetRegistersFromStack (uint32_t *pulFaultStackAddress);
-void led_configure_port_pins(void);
-void vApplicationMallocFailedHook (void);
-void vApplicationStackOverflowHook (void);
-void Task_cdc_rx_check(void *parameters);
-void Task_led_blink(void *parameters);
-void InitTask_cdc_rx_check(void);
-void InitTask_led_blink(void);
+
 /*! \brief Main function. Execution starts here.
  */
 int main(void)

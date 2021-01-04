@@ -5,7 +5,7 @@
  *  Author: Lexus
  */ 
 #include "adc_user.h"
-#include "adc.h"
+#include <asf.h>
 struct adc_module adc_instance;
 // init ADC
 void configure_adc(void)

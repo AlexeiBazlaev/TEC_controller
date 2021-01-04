@@ -5,8 +5,8 @@
  *  Author: Lexus
  */
 #include "realsence.h"
-#include "port.h"
 #include "conf_board.h"
+
 bool		rs_power;
 
 void rs_configure_port_pins(void)
@@ -18,7 +18,7 @@ void rs_configure_port_pins(void)
 	port_pin_set_config(PIN_RS_POWER, &config_port_pin);
 }
 
-void rs_set(_Bool value){
+void rs_set(bool value){
 	port_pin_set_output_level(PIN_RS_POWER, value?0:1);
 	rs_power = value;
 }

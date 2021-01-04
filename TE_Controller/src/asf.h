@@ -73,7 +73,7 @@
 
 // From module: FreeRTOS - kernel 10.0.0
 #include <FreeRTOS.h>
-#include <StackMacros.h>
+//#include <StackMacros.h>
 #include <croutine.h>
 #include <deprecated_definitions.h>
 #include <event_groups.h>
@@ -134,6 +134,13 @@
 // From module: Sleep manager - SAMD implementation
 #include <samd/sleepmgr.h>
 #include <sleepmgr.h>
+
+// From module: TC - Timer Counter (Callback APIs)
+#include <tc.h>
+#include <tc_interrupt.h>
+
+// From module: TCC - Timer Counter for Control Applications (Polled APIs)
+#include <tcc.h>
 
 // From module: USB - Universal Serial Bus
 #include <usb.h>

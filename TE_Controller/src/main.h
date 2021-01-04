@@ -39,6 +39,25 @@
 
 #include "usb_protocol_cdc.h"
 
+struct measured_params{
+	float	TEC_Temp;
+	float	MCU_Temp;
+	float	Vin_LFB;
+	float	Vin_SFB;
+	float	Vin_CS;
+	float	DHT22_Temp;
+	float	DHT22_Hum;
+	float	DS1820_Temp;
+	float	TEC_Power;
+};
+void prvGetRegistersFromStack (uint32_t *pulFaultStackAddress);
+void led_configure_port_pins(void);
+void vApplicationMallocFailedHook (void);
+void vApplicationStackOverflowHook (void);
+void Task_cdc_rx_check(void *parameters);
+void Task_led_blink(void *parameters);
+void InitTask_cdc_rx_check(void);
+void InitTask_led_blink(void);
 /*! \brief Opens the communication port
  * This is called by CDC interface when USB Host enable it.
  *

@@ -4,8 +4,9 @@
  * Created: 03.01.2021 23:22:04
  *  Author: Lexus
  */ 
+#include "tmpgood.h"
 #include "conf_board.h"
-#include "port.h"
+
 void tmpgood_configure_port_pins(void)
 {
 	struct port_config config_port_pin;
@@ -15,7 +16,7 @@ void tmpgood_configure_port_pins(void)
 	port_pin_set_config(TC_TMPGD, &config_port_pin);
 }
 
-_Bool tmpgood_get_state(void)
+bool tmpgood_get_state(void)
 {
 	return port_pin_get_input_level(TC_TMPGD);
 }

@@ -6,7 +6,7 @@
  */ 
 #include "ws2812.h"
 #include "conf_board.h"
-#include "port.h"
+#include <asf.h>
 
 void ws2812_configure_port_pins(void)
 {
