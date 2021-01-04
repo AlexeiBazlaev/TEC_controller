@@ -9,6 +9,6 @@
 #ifndef WS2812_H_
 #define WS2812_H_
 
-void ws2812_configure_port_pins(void)
+void ws2812_configure_port_pins(void);
 
 #endif /* WS2812_H_ */

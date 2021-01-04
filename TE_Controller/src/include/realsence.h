@@ -10,6 +10,6 @@
 #define REALSENCE_H_
 
 void rs_configure_port_pins(void);
-void rs_set(bool value);
+void rs_set(_Bool value);
 
 #endif /* REALSENCE_H_ */

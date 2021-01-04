@@ -1678,7 +1678,7 @@
     <Compile Include="src\ASF\sam0\utils\syscalls\gcc\syscalls.c">
       <SubType>compile</SubType>
     </Compile>
-    <Compile Include="src\include\adc_user.c">
+    <Compile Include="src\include\adc_user.h">
       <SubType>compile</SubType>
     </Compile>
     <Compile Include="src\include\dac_user.h">
@@ -1696,7 +1696,7 @@
     <Compile Include="src\main.c">
       <SubType>compile</SubType>
     </Compile>
-    <Compile Include="src\source\adc_user.h">
+    <Compile Include="src\source\adc_user.c">
       <SubType>compile</SubType>
     </Compile>
     <Compile Include="src\source\dac_user.c">

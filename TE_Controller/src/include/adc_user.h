@@ -8,7 +8,7 @@
 
 #ifndef ADC_H_
 #define ADC_H_
-#include <stdint-gcc.h>
+
 #define	chan_NTC_MCU ADC_POSITIVE_INPUT_PIN1
 #define	chan_NTC_TEC ADC_POSITIVE_INPUT_PIN5
 #define	chan_LFB	 ADC_POSITIVE_INPUT_PIN19

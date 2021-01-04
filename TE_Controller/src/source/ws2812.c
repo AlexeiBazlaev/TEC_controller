@@ -4,6 +4,9 @@
  * Created: 03.01.2021 23:00:57
  *  Author: Lexus
  */ 
+#include "ws2812.h"
+#include "conf_board.h"
+#include "port.h"
 
 void ws2812_configure_port_pins(void)
 {

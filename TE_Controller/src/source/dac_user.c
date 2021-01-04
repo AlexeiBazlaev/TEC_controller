@@ -4,6 +4,7 @@
  * Created: 04.01.2021 0:51:07
  *  Author: Lexus
  */ 
+#include <dac.h>
 #include "dac_user.h"
 struct dac_module dac_instance;
 void configure_dac_channel(void)

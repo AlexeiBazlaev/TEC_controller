@@ -9,6 +9,6 @@
 #ifndef DAC_USER_H_
 #define DAC_USER_H_
 
-void configure_dac_channel(void)
+void configure_dac_channel(void);
 
 #endif /* DAC_USER_H_ */
