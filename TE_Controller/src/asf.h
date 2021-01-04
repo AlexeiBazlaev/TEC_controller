@@ -52,17 +52,28 @@
  * running the ASF driver selector tool. Any changes will be discarded.
  */
 
+// From module: ADC - Analog-to-Digital Converter (Callback APIs)
+#include <adc.h>
+#include <adc_callback.h>
+
 // From module: Common SAM0 compiler driver
 #include <compiler.h>
 #include <status_codes.h>
 
+// From module: DAC - Digital-to-Analog Converter (Callback APIs)
+#include <dac.h>
+#include <dac_callback.h>
+
+// From module: Delay routines
+#include <delay.h>
+
 // From module: EXTINT - External Interrupt (Callback APIs)
-//#include <extint.h>
-//#include <extint_callback.h>
+#include <extint.h>
+#include <extint_callback.h>
 
 // From module: FreeRTOS - kernel 10.0.0
 #include <FreeRTOS.h>
-//#include <StackMacros.h>
+#include <StackMacros.h>
 #include <croutine.h>
 #include <deprecated_definitions.h>
 #include <event_groups.h>

@@ -39,8 +39,18 @@
 #include "ui.h"
 #include "uart.h"
 #include <string.h>
+//#include <stdlib.h>
+#include "realsence.h"
 
+#define PORT_STDIO	0
+#define PORT_DATA	1
+
+//char rcvBuff[128] = {0};
+char str[128] = {0};
+UBaseType_t uxHighWaterMark_cdc_rx_check;
+UBaseType_t uxHighWaterMark_led_blink;
 static volatile bool main_b_cdc_enable = false;
+
 void prvGetRegistersFromStack (uint32_t *pulFaultStackAddress);
 void led_configure_port_pins(void);
 void vApplicationMallocFailedHook (void);
@@ -66,12 +76,11 @@ int main(void)
 #else
 	system_init();
 #endif
-		
+	
 	// Start USB stack to authorize VBus monitoring
 	InitTask_cdc_rx_check();
 	// Init LED
-	InitTask_led_blink();
-	//ui_init();//ui_powerdown();
+	InitTask_led_blink();//ui_init();//ui_powerdown();
 	
 	vTaskStartScheduler();
 	while(true){
@@ -82,49 +91,55 @@ int main(void)
 void Task_cdc_rx_check(void *parameters)
 {
 	#define PORT0  0
-	//volatile uint8_t led = 1;
-	char rcvBuff[128] = {0};	
-	char *pStr = rcvBuff;
-	int len = 0;
+	iram_size_t len = 0;		
+    uxHighWaterMark_cdc_rx_check = uxTaskGetStackHighWaterMark( NULL );
+	
 	while(true)
-	{		
-		while(udi_cdc_multi_is_rx_ready(PORT0))
-		{			
-			len += sprintf(pStr++, "%c", udi_cdc_multi_getc(PORT0));			
+	{			
+		if(main_b_cdc_enable && 
+		   (len = udi_cdc_multi_get_nb_received_data(PORT0)) > 0 &&
+		   udi_cdc_read_no_polling(str, (len<=128)?len:128) > 0 )
+		{		
+			str[len]=0;
+			printf("<%s\n", str);								
 		}
-		if(len>0)
-		{
-			printf("<%s\n", rcvBuff);
-			len=0;
-			pStr = rcvBuff;
-		}
-		//cdc_rx_check();		
-		
-/*#if !defined (DEBUG_CPU_IRQ_DISABLE)		
-		cpu_irq_disable();
-#endif		
-		bool	_tc_callback_flag = tc_callback_flag;
-#if !defined (DEBUG_CPU_IRQ_DISABLE)		
-		cpu_irq_enable();
-#endif	*/	
-		/*if(_tc_callback_flag){
-			tc_callback_flag=false;
-			periodic_event_100ms();
-		}*/
+		uxHighWaterMark_cdc_rx_check = uxTaskGetStackHighWaterMark( NULL );
 	}
 }
-
+/*void Task_cdc_rx_check(void *parameters)
+{
+	#define PORT0  0
+	char rcvBuf[128];
+	char *pStr = rcvBuf;			
+	int len=0;	
+    uxHighWaterMark_cdc_rx_check = uxTaskGetStackHighWaterMark( NULL );
+	
+	while(true)
+	{			
+		if (main_b_cdc_enable)
+		{
+			int symb = udi_cdc_getc();
+			if(symb)
+			{
+				len += sprintf(pStr++, "%c", symb);				
+			}
+			if(symb == '\n')
+			{
+				udi_cdc_write_buf(rcvBuf, len);			
+				pStr = rcvBuf;
+				len = 0;				
+			}
+		}		
+        uxHighWaterMark_cdc_rx_check = uxTaskGetStackHighWaterMark( NULL );
+	}
+}*/
 void InitTask_cdc_rx_check(void)
 {
-	// Enable USB Stack Device
-	udc_start();
-	if (!udc_include_vbus_monitoring())
-	{
-		udc_attach();
-	}	
-	stdio_usb_init();	
+	// Enable USB Stack Device	
+	stdio_usb_init();//udc_start();		
 	stdio_usb_enable();
-	xTaskCreate(Task_cdc_rx_check, (const char*)"Task_cdc_rx_check", configMINIMAL_STACK_SIZE*2, NULL,configMAX_PRIORITIES-1, NULL);
+	
+	xTaskCreate(Task_cdc_rx_check, (const char*)"Task_cdc_rx_check", configMINIMAL_STACK_SIZE*3, NULL,configMAX_PRIORITIES-1, NULL);
 }
 
 void Task_led_blink(void *parameters)
@@ -132,11 +147,13 @@ void Task_led_blink(void *parameters)
 	//long int	c1=0;
 	//long int	c2=0;
 	int cnt=0;
-	
+	/* Inspect our own high water mark on entering the task. */
+	uxHighWaterMark_led_blink = uxTaskGetStackHighWaterMark( NULL );
 	while(1)
 	{
-		printf(">%u sec\n\r", 10*(cnt++));//// stdio_usb_putchar (NULL, "data");//		
-		vTaskDelay(10000);
+		if (main_b_cdc_enable && udi_cdc_multi_is_tx_ready(PORT0))
+			printf(">%u sec\n\r", (cnt++));//// stdio_usb_putchar (NULL, "data");//		
+		vTaskDelay(1000);
 		LED_Toggle(LED_PIN);
 		/*if((c1 % 50000) == 0){
 			//periodic_event_1s();
@@ -156,6 +173,7 @@ void Task_led_blink(void *parameters)
 			c2++;
 		}
 		c1++;*/
+		uxHighWaterMark_led_blink = uxTaskGetStackHighWaterMark( NULL );
 	}
 }
 
@@ -217,7 +235,7 @@ void main_cdc_disable(uint8_t port)
 	uart_close(port);
 }
 
-void main_cdc_set_dtr(uint8_t port, bool b_enable)
+/*void main_cdc_set_dtr(uint8_t port, bool b_enable)
 {
 	if (b_enable) {
 		// Host terminal has open COM
@@ -225,6 +243,21 @@ void main_cdc_set_dtr(uint8_t port, bool b_enable)
 	}else{
 		// Host terminal has close COM
 		ui_com_close(port);
+	}
+}*/
+void main_cdc_set_dtr(uint8_t port, bool b_enable)
+{
+	if(port == PORT_STDIO){
+		if (b_enable) {
+			// Host terminal has open COM
+			stdio_usb_enable();
+			//stdio_cdc_opened=true;
+			}else{
+			// Host terminal has close COM
+			stdio_usb_disable();
+			//stdio_cdc_opened=false;
+		}
+		printf("main_cdc_set_dtr(): %d\r\n", b_enable);
 	}
 }
 

@@ -1,7 +1,7 @@
 /**
  * \file
  *
- * \brief SAM D21 Xplained Pro board configuration.
+ * \brief ARM functions for busy-wait delay loops
  *
  * Copyright (c) 2014-2018 Microchip Technology Inc. and its subsidiaries.
  *
@@ -33,39 +33,71 @@
 /*
  * Support and FAQ: visit <a href="https://www.microchip.com/support/">Microchip Support</a>
  */
+#ifndef CYCLE_COUNTER_H_INCLUDED
+#define CYCLE_COUNTER_H_INCLUDED
 
-#ifndef CONF_BOARD_H_INCLUDED
-#define CONF_BOARD_H_INCLUDED
+#include <compiler.h>
+#include <clock.h>
 
-/* Enable USB VBUS detect */
-//#define CONF_BOARD_USB_VBUS_DETECT
-//temp-ctrl-v1.0b
-#define	LED_PIN		PIN_PA28
-#define LED0_PIN	LED_PIN
-#define	TC_TMPGD	PIN_PA01
+#ifdef __cplusplus
+extern "C" {
+#endif
 
-#define PIN_LNGATE	PIN_PA19
-#define PIN_LPGATE	PIN_PA18
+/**
+ * \name Convenience functions for busy-wait delay loops
+ *
+ * @{
+ */
 
-#define PIN_SNGATE	PIN_PA17
-#define PIN_SPGATE	PIN_PA16
+/**
+ * \brief Delay loop to delay n number of cycles
+ * Delay program execution for at least the specified number of CPU cycles.
+ *
+ * \param n  Number of cycles to delay
+ */
+static inline void delay_cycles(
+		const uint32_t n)
+{
+	if (n > 0) {
+		SysTick->LOAD = n;
+		SysTick->VAL = 0;
 
-#define CONF_TC_MODULE TC
+		while (!(SysTick->CTRL & SysTick_CTRL_COUNTFLAG_Msk)) {
+		};
+	}
+}
 
-#define CONF_PWM_MODULE		TCC0
-#define CONF_PWM_CHANNEL	0
-#define CONF_PWM_OUTPUT		7
+void delay_cycles_us(uint32_t n);
 
-#define	PWM_GCLK_PERIOD		42
+void delay_cycles_ms(uint32_t n);
 
-#define PIN_OW	PIN_PA14
+/**
+ * \brief Delay program execution for at least the specified number of microseconds.
+ *
+ * \param delay  number of microseconds to wait
+ */
+#define cpu_delay_us(delay)      delay_cycles_us(delay)
 
-#define PIN_WS2812	PIN_PA23
-#define LEN_WS2812	32
-//#define LEN_WS2812	2
+/**
+ * \brief Delay program execution for at least the specified number of milliseconds.
+ *
+ * \param delay  number of milliseconds to wait
+ */
+#define cpu_delay_ms(delay)      delay_cycles_ms(delay)
 
-#define PIN_RS_POWER	PIN_PA00
-#define RS_POWER_DEFAULT	true
-#define TEC_POWER_DEFAULT	true
+/**
+ * \brief Delay program execution for at least the specified number of seconds.
+ *
+ * \param delay  number of seconds to wait
+ */
+#define cpu_delay_s(delay)       delay_cycles_ms(1000 * delay)
 
-#endif /* CONF_BOARD_H_INCLUDED */
+/**
+ * @}
+ */
+
+#ifdef __cplusplus
+}
+#endif
+
+#endif /* CYCLE_COUNTER_H_INCLUDED */

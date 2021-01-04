@@ -1,7 +1,7 @@
 /**
  * \file
  *
- * \brief SAM D21 Xplained Pro board configuration.
+ * \brief ARM functions for busy-wait delay loops
  *
  * Copyright (c) 2014-2018 Microchip Technology Inc. and its subsidiaries.
  *
@@ -34,38 +34,53 @@
  * Support and FAQ: visit <a href="https://www.microchip.com/support/">Microchip Support</a>
  */
 
-#ifndef CONF_BOARD_H_INCLUDED
-#define CONF_BOARD_H_INCLUDED
+#include "delay.h"
 
-/* Enable USB VBUS detect */
-//#define CONF_BOARD_USB_VBUS_DETECT
-//temp-ctrl-v1.0b
-#define	LED_PIN		PIN_PA28
-#define LED0_PIN	LED_PIN
-#define	TC_TMPGD	PIN_PA01
+/**
+ * Value used to calculate ms delay. Default to be used with a 8MHz clock;
+ */
+static uint32_t cycles_per_ms = 8000000UL / 1000;
+static uint32_t cycles_per_us = 8000000UL / 1000000;
 
-#define PIN_LNGATE	PIN_PA19
-#define PIN_LPGATE	PIN_PA18
+/**
+ * \brief Initialize the delay driver.
+ *
+ * This must be called during start up to initialize the delay routine with
+ * the current used main clock. It must run any time the main CPU clock is changed.
+ */
+void delay_init(void)
+{
+	cycles_per_ms = system_gclk_gen_get_hz(0);
+	cycles_per_ms /= 1000;
+	cycles_per_us = cycles_per_ms / 1000;
 
-#define PIN_SNGATE	PIN_PA17
-#define PIN_SPGATE	PIN_PA16
+	SysTick->CTRL = SysTick_CTRL_CLKSOURCE_Msk | SysTick_CTRL_ENABLE_Msk;
+}
 
-#define CONF_TC_MODULE TC
+/**
+ * \brief Delay loop to delay at least n number of microseconds
+ *
+ * \param n  Number of microseconds to wait
+ */
+void delay_cycles_us(
+		uint32_t n)
+{
+	while (n--) {
+		/* Devide up to blocks of 10u */
+		delay_cycles(cycles_per_us);
+	}
+}
 
-#define CONF_PWM_MODULE		TCC0
-#define CONF_PWM_CHANNEL	0
-#define CONF_PWM_OUTPUT		7
-
-#define	PWM_GCLK_PERIOD		42
-
-#define PIN_OW	PIN_PA14
-
-#define PIN_WS2812	PIN_PA23
-#define LEN_WS2812	32
-//#define LEN_WS2812	2
-
-#define PIN_RS_POWER	PIN_PA00
-#define RS_POWER_DEFAULT	true
-#define TEC_POWER_DEFAULT	true
-
-#endif /* CONF_BOARD_H_INCLUDED */
+/**
+ * \brief Delay loop to delay at least n number of milliseconds
+ *
+ * \param n  Number of milliseconds to wait
+ */
+void delay_cycles_ms(
+		uint32_t n)
+{
+	while (n--) {
+		/* Devide up to blocks of 1ms */
+		delay_cycles(cycles_per_ms);
+	}
+}

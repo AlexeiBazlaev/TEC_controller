@@ -1,9 +1,9 @@
 /**
  * \file
  *
- * \brief SAM D21 Xplained Pro board configuration.
+ * \brief Common Delay Service
  *
- * Copyright (c) 2014-2018 Microchip Technology Inc. and its subsidiaries.
+ * Copyright (c) 2013-2018 Microchip Technology Inc. and its subsidiaries.
  *
  * \asf_license_start
  *
@@ -33,39 +33,59 @@
 /*
  * Support and FAQ: visit <a href="https://www.microchip.com/support/">Microchip Support</a>
  */
+#ifndef DELAY_H_INCLUDED
+#define DELAY_H_INCLUDED
 
-#ifndef CONF_BOARD_H_INCLUDED
-#define CONF_BOARD_H_INCLUDED
+#ifdef __cplusplus
+extern "C" {
+#endif
 
-/* Enable USB VBUS detect */
-//#define CONF_BOARD_USB_VBUS_DETECT
-//temp-ctrl-v1.0b
-#define	LED_PIN		PIN_PA28
-#define LED0_PIN	LED_PIN
-#define	TC_TMPGD	PIN_PA01
+/**
+ * @defgroup group_common_services_delay Busy-Wait Delay Routines
+ *
+ * This module provides simple loop-based delay routines for those
+ * applications requiring a brief wait during execution. Common for
+ * API ver. 2.
+ *
+ * @{
+ */
 
-#define PIN_LNGATE	PIN_PA19
-#define PIN_LPGATE	PIN_PA18
+#ifdef SYSTICK_MODE
+#include "sam0/systick_counter.h"
+#endif
+#ifdef CYCLE_MODE
+#include "sam0/cycle_counter.h"
+#endif
 
-#define PIN_SNGATE	PIN_PA17
-#define PIN_SPGATE	PIN_PA16
+void delay_init(void);
 
-#define CONF_TC_MODULE TC
+/**
+ * \def delay_s
+ * \brief Delay in at least specified number of seconds.
+ * \param delay Delay in seconds
+ */
+#define delay_s(delay)          ((delay) ? cpu_delay_s(delay) : cpu_delay_us(1))
 
-#define CONF_PWM_MODULE		TCC0
-#define CONF_PWM_CHANNEL	0
-#define CONF_PWM_OUTPUT		7
+/**
+ * \def delay_ms
+ * \brief Delay in at least specified number of milliseconds.
+ * \param delay Delay in milliseconds
+ */
+#define delay_ms(delay)         ((delay) ? cpu_delay_ms(delay) : cpu_delay_us(1))
 
-#define	PWM_GCLK_PERIOD		42
+/**
+ * \def delay_us
+ * \brief Delay in at least specified number of microseconds.
+ * \param delay Delay in microseconds
+ */
+#define delay_us(delay)         ((delay) ? cpu_delay_us(delay) : cpu_delay_us(1))
 
-#define PIN_OW	PIN_PA14
+#ifdef __cplusplus
+}
+#endif
 
-#define PIN_WS2812	PIN_PA23
-#define LEN_WS2812	32
-//#define LEN_WS2812	2
+/**
+ * @}
+ */
 
-#define PIN_RS_POWER	PIN_PA00
-#define RS_POWER_DEFAULT	true
-#define TEC_POWER_DEFAULT	true
-
-#endif /* CONF_BOARD_H_INCLUDED */
+#endif /* DELAY_H_INCLUDED */
