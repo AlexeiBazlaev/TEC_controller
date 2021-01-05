@@ -42,10 +42,12 @@
 //#include <stdlib.h>
 #include "realsence.h"
 #include "ntc.h"
+#include <arm_math.h>
 
 #define PORT_STDIO	0
 #define PORT_DATA	1
 
+uint16_t adc_value = 100;
 //char rcvBuff[128] = {0};
 char str[128] = {0};
 UBaseType_t uxHighWaterMark_cdc_rx_check;
@@ -173,18 +175,22 @@ void Task_led_blink(void *parameters)
 }
 
 void Task_mesure(void *parameters)
-{
+{	
 	uxHighWaterMark_mesure = uxTaskGetStackHighWaterMark( NULL );
 	for (;;)
 	{
-		Controller.temps.MCU_Temp = NTC_MCU_get_temp();
+		Controller.temps.MCU_Temp = NTC_MCU_get_temp(NULL);
 		if (main_b_cdc_enable && udi_cdc_multi_is_tx_ready(PORT0))
-			printf(">%f\n\r", Controller.temps.MCU_Temp);
+		{
+			if(fpclassify(Controller.temps.MCU_Temp) == FP_NAN)
+				printf(">NTC_TEMP = NAN\n\r");
+			else
+				printf(">NTC_TEMP = %d\n\r", (int)Controller.temps.MCU_Temp );
+		}
 		LED_Toggle(LED_PIN);			
 		uxHighWaterMark_mesure = uxTaskGetStackHighWaterMark( NULL );
 		vTaskDelay(1000);
-	}
-	
+	}	
 }
 
 void InitTask_led_blink(void)

@@ -19,7 +19,7 @@
 	float NTC_R2T(float R);
 
 	// Read ADC and calculate temperature in Cenlsius.
-	float NTC_MCU_get_temp(void);
+	float NTC_MCU_get_temp(uint16_t *p_adc_val);
 
 	float NTC_TEC_get_temp(uint16_t	*p_value, float	*p_R);
 

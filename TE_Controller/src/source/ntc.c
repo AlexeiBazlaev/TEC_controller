@@ -5,11 +5,20 @@
  *  Author: Lexus
  */ 
 #include "ntc.h"
-#include <arm_math.h>
+#include <math.h>
 
 
 #define MCU_CONTROL
 // ADC value to R
+/*float NTC_MCU_value2R(uint16_t	value)
+{
+	float	R10 = 17800.0;
+	float	R11 = 7680.0;
+
+	float	Vadc = value*3.3/1.48/4096;
+	float res = (Vadc*(R10+R11) -3.3*R11)/(3.3-Vadc);
+	return res;
+}*/
 float NTC_MCU_value2R(uint16_t	value)
 {
 	float	R10 = 17800.0;
@@ -17,7 +26,8 @@ float NTC_MCU_value2R(uint16_t	value)
 
 	float	Q = adc_get_Q(value);
 		
-	return ((R10*Q)/(1 - Q) - R11);
+	float res = (R10*Q)/(1 - Q)-R11;
+	return res;
 }
 
 float NTC_TEC_value2R(uint16_t	value)
@@ -41,21 +51,24 @@ float NTC_TEC_value2R(uint16_t	value)
 // Resistance to Temp
 float NTC_R2T(float R)
 {
-	float	K0 = 273.15;
-	float	T0 = 25.0 + K0;
+	float	K0 = 273.15;	
+	float   invT0 = 0.003354;//float	T0 = 25.0 + K0;
 	float	R0 = 10000.0;
 		
 	float	B  = 3863.737706;
-	return (1.0/((log(R/R0)/B) + (1/T0)) - K0);
+	return (1.0/((logf(R/R0)/B) + invT0) - K0);
 }
 
 // Read ADC and calculate temperature in Cenlsius.
-float NTC_MCU_get_temp(void)
+float NTC_MCU_get_temp(uint16_t *p_adc_val)
 {
-	uint16_t adc_val = adc_read_value_spec(chan_NTC_MCU);
-		
-	float	R = NTC_MCU_value2R(adc_val);
-	float	t = NTC_R2T(R);
+	uint16_t adc_val=0;
+	if (p_adc_val)
+		adc_val = *p_adc_val;
+	else
+		adc_val = adc_read_value_spec(chan_NTC_MCU);
+	float	R = NTC_MCU_value2R(adc_val);	
+	float	t = NTC_R2T(R);	
 	return 	t;
 }
 

@@ -34,7 +34,7 @@ void ADN8831_control(void){
 	TEC_set_TEMPSET_volt(0.9);
 	
 	// MCU temp
-	float	t = NTC_MCU_get_temp();
+	float	t = NTC_MCU_get_temp(NULL);
 	make_float2str(t_MCU_str, MAX_STR_FLOAT, (float)t);
 	
 	
