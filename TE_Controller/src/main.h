@@ -71,12 +71,12 @@ void vApplicationMallocFailedHook (void);
 void vApplicationStackOverflowHook (void);
 void Task_cdc_rx_check(void *parameters);
 void Task_led_blink(void *parameters);
-void Task_mesure(void *parameters);
+void Task_measure(void *parameters);
 void Task_regulator(void *parameters);
 void InitTask_cdc_rx_check(void);
 void InitTask_led_blink(void);
 void InitTask_regulator(void);
-void InitTask_mesure(void);
+void InitTask_measure(void);
 
 /*! \brief Opens the communication port
  * This is called by CDC interface when USB Host enable it.

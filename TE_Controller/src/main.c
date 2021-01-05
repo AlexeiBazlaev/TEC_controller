@@ -78,7 +78,7 @@ int main(void)
 	InitTask_cdc_rx_check();
 	// Init LED
 	InitTask_led_blink();//ui_init();//ui_powerdown();
-	InitTask_mesure();
+	InitTask_measure();
 	vTaskStartScheduler();
 	while(true){
 		__BKPT();
@@ -174,18 +174,19 @@ void Task_led_blink(void *parameters)
 	}
 }
 
-void Task_mesure(void *parameters)
+void Task_measure(void *parameters)
 {	
 	uxHighWaterMark_mesure = uxTaskGetStackHighWaterMark( NULL );
 	for (;;)
 	{
 		Controller.temps.MCU_Temp = NTC_MCU_get_temp(NULL);
+		Controller.temps.TEC_Temp = NTC_TEC_get_temp(NULL, NULL);
 		if (main_b_cdc_enable && udi_cdc_multi_is_tx_ready(PORT0))
 		{
-			if(fpclassify(Controller.temps.MCU_Temp) == FP_NAN)
-				printf(">NTC_TEMP = NAN\n\r");
+			if(fpclassify(Controller.temps.MCU_Temp) == FP_NAN)			
+				printf(">NTC_MCU_TEMP = NAN\n\r");
 			else
-				printf(">NTC_TEMP = %d\n\r", (int)Controller.temps.MCU_Temp );
+				printf(">NTC_MCU_TEMP = %d, NTC_TEC_TEMP = %d\n\r", (int)Controller.temps.MCU_Temp, (int)Controller.temps.TEC_Temp);
 		}
 		LED_Toggle(LED_PIN);			
 		uxHighWaterMark_mesure = uxTaskGetStackHighWaterMark( NULL );
@@ -200,10 +201,10 @@ void InitTask_led_blink(void)
 	//xTaskCreate(Task_led_blink, (const char*)"Task_led_blink", configMINIMAL_STACK_SIZE*2, NULL,configMAX_PRIORITIES-1, NULL);
 }
 
-void InitTask_mesure(void)
+void InitTask_measure(void)
 {
 	configure_adc();
-	xTaskCreate(Task_mesure, (const char*)"Task_mesure", configMINIMAL_STACK_SIZE*2, NULL,configMAX_PRIORITIES-1, NULL);
+	xTaskCreate(Task_measure, (const char*)"Task_measure", configMINIMAL_STACK_SIZE*2, NULL,configMAX_PRIORITIES-1, NULL);
 }
 
 
