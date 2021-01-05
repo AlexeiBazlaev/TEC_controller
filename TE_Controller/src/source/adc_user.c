@@ -42,14 +42,16 @@ uint16_t adc_read_value_spec(ADC_chan_t	chan)
 	return adc_read_value();
 }
 
-float	adc_get_Q(uint16_t	value){
+float	adc_get_Q(uint16_t	value)
+{	
 	float	gane_factor=0.5;
 	float	vref_k=1.0/1.48;
 	float	ADC_range = 4096.0;
 	return (value*vref_k)/(gane_factor*ADC_range);
 }
 
-float	adc_get_V(uint16_t	value){
+float	adc_get_V(uint16_t	value)
+{
 	float	Uvcc=3.3;
 	return adc_get_Q(value) * Uvcc;
 }

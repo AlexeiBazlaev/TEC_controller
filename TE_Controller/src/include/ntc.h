@@ -9,7 +9,7 @@
 #ifndef NTC_H_
 #define NTC_H_
 #include <asf.h>
-
+#include "adc_user.h"
 	// ADC value to R
 	float NTC_MCU_value2R(uint16_t	value);
 

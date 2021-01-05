@@ -41,6 +41,7 @@
 #include <string.h>
 //#include <stdlib.h>
 #include "realsence.h"
+#include "ntc.h"
 
 #define PORT_STDIO	0
 #define PORT_DATA	1
@@ -48,10 +49,10 @@
 //char rcvBuff[128] = {0};
 char str[128] = {0};
 UBaseType_t uxHighWaterMark_cdc_rx_check;
-UBaseType_t uxHighWaterMark_led_blink;
+UBaseType_t uxHighWaterMark_led_blink, uxHighWaterMark_mesure;
 static volatile bool main_b_cdc_enable = false;
 struct measured_params	m_params;
-
+Controller_t Controller;
 
 /*! \brief Main function. Execution starts here.
  */
@@ -75,7 +76,7 @@ int main(void)
 	InitTask_cdc_rx_check();
 	// Init LED
 	InitTask_led_blink();//ui_init();//ui_powerdown();
-	
+	InitTask_mesure();
 	vTaskStartScheduler();
 	while(true){
 		__BKPT();
@@ -171,13 +172,33 @@ void Task_led_blink(void *parameters)
 	}
 }
 
+void Task_mesure(void *parameters)
+{
+	uxHighWaterMark_mesure = uxTaskGetStackHighWaterMark( NULL );
+	for (;;)
+	{
+		Controller.temps.MCU_Temp = NTC_MCU_get_temp();
+		if (main_b_cdc_enable && udi_cdc_multi_is_tx_ready(PORT0))
+			printf(">%f\n\r", Controller.temps.MCU_Temp);
+		LED_Toggle(LED_PIN);			
+		uxHighWaterMark_mesure = uxTaskGetStackHighWaterMark( NULL );
+		vTaskDelay(1000);
+	}
+	
+}
+
 void InitTask_led_blink(void)
 {	
 	led_configure_port_pins();
 	LED_Off(LED_PIN);
-	xTaskCreate(Task_led_blink, (const char*)"Task_led_blink", configMINIMAL_STACK_SIZE*2, NULL,configMAX_PRIORITIES-1, NULL);
+	//xTaskCreate(Task_led_blink, (const char*)"Task_led_blink", configMINIMAL_STACK_SIZE*2, NULL,configMAX_PRIORITIES-1, NULL);
 }
 
+void InitTask_mesure(void)
+{
+	configure_adc();
+	xTaskCreate(Task_mesure, (const char*)"Task_mesure", configMINIMAL_STACK_SIZE*2, NULL,configMAX_PRIORITIES-1, NULL);
+}
 
 
 void main_suspend_action(void)

@@ -6,7 +6,7 @@
  */ 
 #include "ntc.h"
 #include <arm_math.h>
-#include "adc_user.h"
+
 
 #define MCU_CONTROL
 // ADC value to R
