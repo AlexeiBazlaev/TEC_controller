@@ -58,11 +58,17 @@ typedef struct
 	float	MCU_Temp;
 	float	DHT22_Temp;
 	float	DS1820_Temp;
-}Temperatures_t;
+} Temperatures_t;
 
+typedef struct 
+{
+	float tecV;
+	float tecI;
+} TecState_t;
 typedef struct  
 {
 	Temperatures_t temps;
+	TecState_t tecState;
 } Controller_t;
 
 void prvGetRegistersFromStack (uint32_t *pulFaultStackAddress);

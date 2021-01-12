@@ -186,7 +186,7 @@ void Task_measure(void *parameters)
 			if(fpclassify(Controller.temps.MCU_Temp) == FP_NAN)			
 				printf(">NTC_MCU_TEMP = NAN\n\r");
 			else
-				printf(">NTC_MCU_TEMP = %d, NTC_TEC_TEMP = %d\n\r", (int)Controller.temps.MCU_Temp, (int)Controller.temps.TEC_Temp);
+				printf(">NTC_MCU_TEMP = %d\n\r", (int)Controller.temps.MCU_Temp);//printf(">NTC_MCU_TEMP = %d, NTC_TEC_TEMP = %d\n\r", (int)Controller.temps.MCU_Temp, (int)Controller.temps.TEC_Temp);
 		}
 		LED_Toggle(LED_PIN);			
 		uxHighWaterMark_mesure = uxTaskGetStackHighWaterMark( NULL );
