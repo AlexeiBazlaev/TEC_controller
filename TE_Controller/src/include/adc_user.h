@@ -25,4 +25,5 @@ float	adc_get_V(uint16_t	value);
 float	adc_get_Q(uint16_t	value);
 uint16_t	adc_read_value_spec(ADC_chan_t);
 float		adc_get_V_spec(ADC_chan_t	chan);
+
 #endif /* ADC_H_ */

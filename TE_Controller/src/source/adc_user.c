@@ -39,12 +39,6 @@ void configure_adc(void)
 	//adc_start_conversion(&adc_instance);
 }
 
-/*uint16_t adc_read_value(void)
-{	
-	uint16_t result = 0xFFFF;
-	adc_read(&adc_instance, &result);
-	return result;
-}*/
 uint16_t adc_read_value(void){
 	adc_start_conversion(&adc_instance);
 	uint16_t result;
@@ -71,4 +65,9 @@ float	adc_get_V(uint16_t	value)
 {
 	float	Uvcc=3.3;
 	return adc_get_Q(value) * Uvcc;
+}
+
+float	adc_get_V_spec(ADC_chan_t	chan){
+	uint16_t	value = adc_read_value_spec(chan);
+	return	adc_get_V(value);
 }

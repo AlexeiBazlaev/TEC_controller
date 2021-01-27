@@ -1,24 +1,22 @@
 /**
  * \file
  *
- * \brief CDC Application Main functions
+ * \brief TE_Controller
  *
- * Copyright (c) 2011-2018 Microchip Technology Inc. and its subsidiaries.
- *
- * \asf_license_start
+ * Copyright (c) 2020-2021 Realsence Inc. and its subsidiaries.
  *
  * \page License
  *
- * Subject to your compliance with these terms, you may use Microchip
- * software and any derivatives exclusively with Microchip products.
+ * Subject to your compliance with these terms, you may use Realsence
+ * software and any derivatives exclusively with Realsence products.
  * It is your responsibility to comply with third party license terms applicable
  * to your use of third party software (including open source software) that
- * may accompany Microchip software.
+ * may accompany Realsence software.
  *
- * THIS SOFTWARE IS SUPPLIED BY MICROCHIP "AS IS". NO WARRANTIES,
+ * THIS SOFTWARE IS SUPPLIED BY Realsence "AS IS". NO WARRANTIES,
  * WHETHER EXPRESS, IMPLIED OR STATUTORY, APPLY TO THIS SOFTWARE,
  * INCLUDING ANY IMPLIED WARRANTIES OF NON-INFRINGEMENT, MERCHANTABILITY,
- * AND FITNESS FOR A PARTICULAR PURPOSE. IN NO EVENT WILL MICROCHIP BE
+ * AND FITNESS FOR A PARTICULAR PURPOSE. IN NO EVENT WILL Realsence BE
  * LIABLE FOR ANY INDIRECT, SPECIAL, PUNITIVE, INCIDENTAL OR CONSEQUENTIAL
  * LOSS, DAMAGE, COST OR EXPENSE OF ANY KIND WHATSOEVER RELATED TO THE
  * SOFTWARE, HOWEVER CAUSED, EVEN IF MICROCHIP HAS BEEN ADVISED OF THE
@@ -26,13 +24,8 @@
  * ALLOWED BY LAW, MICROCHIP'S TOTAL LIABILITY ON ALL CLAIMS IN ANY WAY
  * RELATED TO THIS SOFTWARE WILL NOT EXCEED THE AMOUNT OF FEES, IF ANY,
  * THAT YOU HAVE PAID DIRECTLY TO MICROCHIP FOR THIS SOFTWARE.
- *
- * \asf_license_stop
- *
  */
-/*
- * Support and FAQ: visit <a href="https://www.microchip.com/support/">Microchip Support</a>
- */
+
 
 #include <asf.h>
 #include "conf_usb.h"
@@ -43,6 +36,13 @@
 #include "realsence.h"
 #include "ntc.h"
 #include <arm_math.h>
+#include "dht.h"
+#include "mcu_control.h"
+#include "adc_user.h"
+#include "power_regulator.h"
+#include "tec.h"
+#include "backlight.h"
+#include "ws2812.h"
 
 #define PORT_STDIO	0
 #define PORT_DATA	1
@@ -50,150 +50,232 @@
 uint16_t adc_value = 100;
 //char rcvBuff[128] = {0};
 char str[128] = {0};
-UBaseType_t uxHighWaterMark_cdc_rx_check;
-UBaseType_t uxHighWaterMark_led_blink, uxHighWaterMark_mesure;
+UBaseType_t uxHighWaterMark_cdc_rx_check, uxHighWaterMark_cdc_tx;
+UBaseType_t uxHighWaterMark_led_blink, uxHighWaterMark_mesure, uxHighWaterMark_regulator, uxHighWaterMark_backlight;
 static volatile bool main_b_cdc_enable = false;
 struct measured_params	m_params;
 Controller_t Controller;
 
-/*! \brief Main function. Execution starts here.
- */
+/************************************************************************
+* \brief Main function. Execution starts here.
+************************************************************************/
 int main(void)
 {
-
 	irq_initialize_vectors();
-	cpu_irq_enable();
-
-	// Initialize the sleep manager
+	cpu_irq_enable();	
 	sleepmgr_init();
+	system_init();	
 
-#if !SAM0
-	sysclk_init();
-	board_init();
-#else
-	system_init();
-#endif
-	
-	// Start USB stack to authorize VBus monitoring
-	InitTask_cdc_rx_check();
-	// Init LED
+	InitTask_cdc_rx_tx();
 	InitTask_led_blink();//ui_init();//ui_powerdown();
 	InitTask_measure();
+	InitTask_regulator();
+	InitTask_backlight();
 	vTaskStartScheduler();
-	while(true){
-		__BKPT();
+	__BKPT();
+}
+
+
+/************************************************************************
+* \fn void Task_measure(void *parameters)
+* \brief                                  
+* \param
+* \return
+************************************************************************/
+void Task_measure(void *parameters)
+{
+	uxHighWaterMark_mesure = uxTaskGetStackHighWaterMark( NULL );
+	for (;;)
+	{
+		Controller.temps.MCU_Temp = NTC_MCU_get_temp(NULL);
+		Controller.temps.TEC_Temp = NTC_TEC_get_temp(NULL, NULL);
+		//measurement_DHT22();
+		Controller.tecState.tecV_N = adc_get_V_spec(chan_LFB);
+		Controller.tecState.tecV_P = adc_get_V_spec(chan_SFB);
+		Controller.tecState.tecI   = GetTecCurrent(CURRENT_SENSE_RESISTENCE);
+				
+		uxHighWaterMark_mesure = uxTaskGetStackHighWaterMark( NULL );
+		vTaskDelay(20);
 	}
 }
 
-void Task_cdc_rx_check(void *parameters)
+
+/************************************************************************
+* \fn void Task_regulator(void *parameters)
+* \brief
+* \param
+* \return
+************************************************************************/
+void Task_regulator(void *parameters)
+{	
+	uxHighWaterMark_regulator = uxTaskGetStackHighWaterMark( NULL );
+	for (;;)
+	{
+		temperature_control(Controller.temps.MCU_Temp, &m_params.TEC_Power, ENABLE);				
+		uxHighWaterMark_regulator = uxTaskGetStackHighWaterMark( NULL );
+		//vTaskDelay(1000);
+	}
+}
+
+
+/************************************************************************
+* \fn void Task_cdc_rx(void *parameters)
+* \brief
+* \param
+* \return
+************************************************************************/
+void Task_cdc_rx(void *parameters)
 {
 	#define PORT0  0
-	iram_size_t len = 0;		
-    uxHighWaterMark_cdc_rx_check = uxTaskGetStackHighWaterMark( NULL );
+	iram_size_t len = 0;
+	uxHighWaterMark_cdc_rx_check = uxTaskGetStackHighWaterMark( NULL );
 	
 	while(true)
-	{			
-		if(main_b_cdc_enable && 
-		   (len = udi_cdc_multi_get_nb_received_data(PORT0)) > 0 &&
-		   udi_cdc_read_no_polling(str, (len<=128)?len:128) > 0 )
-		{		
+	{
+		if(main_b_cdc_enable &&
+		(len = udi_cdc_multi_get_nb_received_data(PORT0)) > 0 &&
+		udi_cdc_read_no_polling(str, (len<=128)?len:128) > 0 )
+		{
 			str[len]=0;
-			printf("<%s\n", str);								
+			printf("<%s\n", str);
 		}
 		uxHighWaterMark_cdc_rx_check = uxTaskGetStackHighWaterMark( NULL );
 	}
 }
-/*void Task_cdc_rx_check(void *parameters)
+
+
+/************************************************************************
+* \fn void Task_cdc_tx(void *parameters)
+* \brief
+* \param
+* \return
+************************************************************************/
+void Task_cdc_tx(void *parameters)
 {
 	#define PORT0  0
-	char rcvBuf[128];
-	char *pStr = rcvBuf;			
-	int len=0;	
-    uxHighWaterMark_cdc_rx_check = uxTaskGetStackHighWaterMark( NULL );
+	uxHighWaterMark_cdc_tx = uxTaskGetStackHighWaterMark( NULL );
 	
 	while(true)
-	{			
-		if (main_b_cdc_enable)
+	{
+		if (main_b_cdc_enable && udi_cdc_multi_is_tx_ready(PORT0))
 		{
-			int symb = udi_cdc_getc();
-			if(symb)
-			{
-				len += sprintf(pStr++, "%c", symb);				
-			}
-			if(symb == '\n')
-			{
-				udi_cdc_write_buf(rcvBuf, len);			
-				pStr = rcvBuf;
-				len = 0;				
-			}
-		}		
-        uxHighWaterMark_cdc_rx_check = uxTaskGetStackHighWaterMark( NULL );
+			if(fpclassify(Controller.temps.MCU_Temp) == FP_NAN)
+			printf(">NTC_MCU_TEMP = NAN\n\r");
+			else
+			printf(">NTC_MCU_TEMP = %d\n\r", (int)Controller.temps.MCU_Temp);//printf(">NTC_MCU_TEMP = %d, NTC_TEC_TEMP = %d\n\r", (int)Controller.temps.MCU_Temp, (int)Controller.temps.TEC_Temp);
+		}
+		LED_Toggle(LED_PIN);
+		vTaskDelay(1000);
+		uxHighWaterMark_cdc_tx = uxTaskGetStackHighWaterMark( NULL );
 	}
-}*/
-void InitTask_cdc_rx_check(void)
+}
+
+/************************************************************************
+* \fn void Task_led_blink(void *parameters)
+* \brief
+* \param
+* \return
+************************************************************************/
+void Task_backlight(void *parameters)
+{	uint32_t cnt10 = 0;
+	uxHighWaterMark_backlight = uxTaskGetStackHighWaterMark( NULL );
+	while(1)
+	{	
+		backlight_color_show(255, 0, 0);
+		vTaskDelay(1000);
+		backlight_color_show(255, 100, 0);
+		vTaskDelay(1000);
+		backlight_color_show(0, 255, 0);
+		vTaskDelay(1000);
+		/*backlight_event_100ms();
+		vTaskDelay(100);		
+		if(!((++cnt10)%10))
+			backlight_event_1s();*/
+		uxHighWaterMark_backlight = uxTaskGetStackHighWaterMark( NULL );		
+	}
+}
+
+/************************************************************************
+* \fn void InitTask_cdc_rx_tx(void)
+* \brief
+* \param
+* \return
+************************************************************************/
+void InitTask_cdc_rx_tx(void)
 {
 	// Enable USB Stack Device	
 	stdio_usb_init();//udc_start();		
 	stdio_usb_enable();
 	
-	xTaskCreate(Task_cdc_rx_check, (const char*)"Task_cdc_rx_check", configMINIMAL_STACK_SIZE*3, NULL,configMAX_PRIORITIES-1, NULL);
+	xTaskCreate(Task_cdc_rx, (const char*)"Task_cdc_rx", configMINIMAL_STACK_SIZE*1, NULL,configMAX_PRIORITIES-1, NULL);
+	xTaskCreate(Task_cdc_tx, (const char*)"Task_cdc_tx", configMINIMAL_STACK_SIZE*3, NULL,configMAX_PRIORITIES-1, NULL);
 }
 
-void Task_led_blink(void *parameters)
+/************************************************************************
+* \fn void InitTask_regulator(void)
+* \brief
+* \param
+* \return
+************************************************************************/
+void InitTask_regulator(void)
 {
-	//long int	c1=0;
-	//long int	c2=0;
-	int cnt=0;
-	/* Inspect our own high water mark on entering the task. */
+	xTaskCreate(Task_regulator, (const char*)"Task_regulator", configMINIMAL_STACK_SIZE*3, NULL,configMAX_PRIORITIES-1, NULL);
+}
+
+/************************************************************************
+* \fn void InitTask_measure(void)
+* \brief
+* \param
+* \return
+************************************************************************/
+void InitTask_measure(void)
+{
+	configure_adc();
+	xTaskCreate(Task_measure, (const char*)"Task_measure", configMINIMAL_STACK_SIZE*2, NULL,configMAX_PRIORITIES-1, NULL);
+}
+
+/************************************************************************
+* \fn void InitTask_backlight(void)
+* \brief
+* \param
+* \return
+************************************************************************/
+void InitTask_backlight(void)
+{	
+	ws2812_configure_port_pins();
+	backlight_init();
+	backlight_mode_demo();	
+	xTaskCreate(Task_backlight, (const char*)"Task_backlight", configMINIMAL_STACK_SIZE*1, NULL,configMAX_PRIORITIES-1, NULL);
+}
+
+
+
+/************************************************************************
+* \fn void Task_led_blink(void *parameters)
+* \brief
+* \param
+* \return
+************************************************************************/
+void Task_led_blink(void *parameters)
+{	
+	int cnt=0;	
 	uxHighWaterMark_led_blink = uxTaskGetStackHighWaterMark( NULL );
 	while(1)
 	{
 		if (main_b_cdc_enable && udi_cdc_multi_is_tx_ready(PORT0))
 			printf(">%u sec\n\r", (cnt++));//// stdio_usb_putchar (NULL, "data");//		
 		vTaskDelay(1000);
-		LED_Toggle(LED_PIN);
-		/*if((c1 % 50000) == 0){
-			//periodic_event_1s();
-			if(!stdio_cdc_opened){
-				if(c2 % 2){
-					set_led(false);
-					}else{
-					set_led(true);
-				}
-				}else{
-				if(c2 % 3){
-					set_led(false);
-					}else{
-					set_led(true);
-				}
-			}
-			c2++;
-		}
-		c1++;*/
+		LED_Toggle(LED_PIN);		
 		uxHighWaterMark_led_blink = uxTaskGetStackHighWaterMark( NULL );
 	}
 }
 
-void Task_measure(void *parameters)
-{	
-	uxHighWaterMark_mesure = uxTaskGetStackHighWaterMark( NULL );
-	for (;;)
-	{
-		Controller.temps.MCU_Temp = NTC_MCU_get_temp(NULL);
-		Controller.temps.TEC_Temp = NTC_TEC_get_temp(NULL, NULL);
-		if (main_b_cdc_enable && udi_cdc_multi_is_tx_ready(PORT0))
-		{
-			if(fpclassify(Controller.temps.MCU_Temp) == FP_NAN)			
-				printf(">NTC_MCU_TEMP = NAN\n\r");
-			else
-				printf(">NTC_MCU_TEMP = %d\n\r", (int)Controller.temps.MCU_Temp);//printf(">NTC_MCU_TEMP = %d, NTC_TEC_TEMP = %d\n\r", (int)Controller.temps.MCU_Temp, (int)Controller.temps.TEC_Temp);
-		}
-		LED_Toggle(LED_PIN);			
-		uxHighWaterMark_mesure = uxTaskGetStackHighWaterMark( NULL );
-		vTaskDelay(1000);
-	}	
-}
-
+/************************************************************************
+* \fn void Task_led_blink(void *parameters)
+* \brief
+* \param
+* \return
+************************************************************************/
 void InitTask_led_blink(void)
 {	
 	led_configure_port_pins();
@@ -201,11 +283,7 @@ void InitTask_led_blink(void)
 	//xTaskCreate(Task_led_blink, (const char*)"Task_led_blink", configMINIMAL_STACK_SIZE*2, NULL,configMAX_PRIORITIES-1, NULL);
 }
 
-void InitTask_measure(void)
-{
-	configure_adc();
-	xTaskCreate(Task_measure, (const char*)"Task_measure", configMINIMAL_STACK_SIZE*2, NULL,configMAX_PRIORITIES-1, NULL);
-}
+
 
 
 void main_suspend_action(void)
@@ -257,16 +335,7 @@ void main_cdc_disable(uint8_t port)
 	uart_close(port);
 }
 
-/*void main_cdc_set_dtr(uint8_t port, bool b_enable)
-{
-	if (b_enable) {
-		// Host terminal has open COM
-		ui_com_open(port);
-	}else{
-		// Host terminal has close COM
-		ui_com_close(port);
-	}
-}*/
+
 void main_cdc_set_dtr(uint8_t port, bool b_enable)
 {
 	if(port == PORT_STDIO){
@@ -292,21 +361,42 @@ void led_configure_port_pins(void)
 	port_pin_set_config(LED_PIN, &config_port_pin);
 }
 
-void vApplicationMallocFailedHook (void) {
+/************************************************************************
+* \fn void vApplicationMallocFailedHook (void)
+* \brief
+* \param
+* \return
+************************************************************************/
+void vApplicationMallocFailedHook (void) 
+{
 	while (1)
 	{
 		__BKPT();
 	};
 }
 
-void vApplicationStackOverflowHook (void) {
+/************************************************************************
+* \fn void vApplicationStackOverflowHook (void)
+* \brief
+* \param
+* \return
+************************************************************************/
+void vApplicationStackOverflowHook (void) 
+{
 	while (1)
 	{
 		__BKPT();
 	};
 }
 
-void prvGetRegistersFromStack (uint32_t *pulFaultStackAddress) {
+/************************************************************************
+* \fn void prvGetRegistersFromStack (uint32_t *pulFaultStackAddress)
+* \brief
+* \param
+* \return
+************************************************************************/
+void prvGetRegistersFromStack (uint32_t *pulFaultStackAddress) 
+{
 	__attribute__((unused)) volatile uint32_t r0;
 	__attribute__((unused)) volatile uint32_t r1;
 	__attribute__((unused)) volatile uint32_t r2;
@@ -407,3 +497,42 @@ void prvGetRegistersFromStack (uint32_t *pulFaultStackAddress) {
  *       - conf_foo.h   configuration of each module
  *       - ui.c        implement of user's interface (leds,buttons...)
  */
+
+/*void Task_cdc_rx(void *parameters)
+{
+	#define PORT0  0
+	char rcvBuf[128];
+	char *pStr = rcvBuf;			
+	int len=0;	
+    uxHighWaterMark_cdc_rx_check = uxTaskGetStackHighWaterMark( NULL );
+	
+	while(true)
+	{			
+		if (main_b_cdc_enable)
+		{
+			int symb = udi_cdc_getc();
+			if(symb)
+			{
+				len += sprintf(pStr++, "%c", symb);				
+			}
+			if(symb == '\n')
+			{
+				udi_cdc_write_buf(rcvBuf, len);			
+				pStr = rcvBuf;
+				len = 0;				
+			}
+		}		
+        uxHighWaterMark_cdc_rx_check = uxTaskGetStackHighWaterMark( NULL );
+	}
+}*/
+
+/*void main_cdc_set_dtr(uint8_t port, bool b_enable)
+{
+	if (b_enable) {
+		// Host terminal has open COM
+		ui_com_open(port);
+	}else{
+		// Host terminal has close COM
+		ui_com_close(port);
+	}
+}*/

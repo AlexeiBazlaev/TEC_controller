@@ -10,7 +10,7 @@
 #define lineDown()		port_pin_set_output_level(DHT_Pin, 0)
 #define lineUp()		port_pin_set_output_level(DHT_Pin, 1)
 #define getLine()		port_pin_get_input_level(DHT_Pin)
-#define Delay(d)		delay_ms(d)
+#define Delay(d)		vTaskDelay(d)
 
 #define CPU_IRQ_enable()	cpu_irq_enable()
 #define CPU_IRQ_disable()	cpu_irq_disable()
@@ -37,9 +37,9 @@ static void goToInput(void) {
 
 uint8_t DHT_getData(DHT_type t, DHT_data*	p_data){
 	uint8_t	ret;
-	CPU_IRQ_disable();
+	//CPU_IRQ_disable();
 	ret = _DHT_getData(t, p_data);
-	CPU_IRQ_enable();
+	//CPU_IRQ_enable();
 	return ret;
 }
 

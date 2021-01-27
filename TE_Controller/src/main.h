@@ -39,6 +39,10 @@
 
 #include "usb_protocol_cdc.h"
 
+#define CURRENT_SENSE_RESISTENCE 0.005f
+#define TEC_TEMP_MAX	35.0f
+#define TEC_TEMP_MIN	5.0f
+#define TEC_TEMP_NORM	25.0f
 
 typedef struct measured_params{
 	float	TEC_Temp;
@@ -62,12 +66,14 @@ typedef struct
 
 typedef struct 
 {
-	float tecV;
+	float tecV_P;
+	float tecV_N;
 	float tecI;
 } TecState_t;
+
 typedef struct  
 {
-	Temperatures_t temps;
+	Temperatures_t temps;	
 	TecState_t tecState;
 } Controller_t;
 
@@ -75,14 +81,18 @@ void prvGetRegistersFromStack (uint32_t *pulFaultStackAddress);
 void led_configure_port_pins(void);
 void vApplicationMallocFailedHook (void);
 void vApplicationStackOverflowHook (void);
-void Task_cdc_rx_check(void *parameters);
+void Task_cdc_rx(void *parameters);
+void Task_cdc_tx(void *parameters);
 void Task_led_blink(void *parameters);
 void Task_measure(void *parameters);
 void Task_regulator(void *parameters);
-void InitTask_cdc_rx_check(void);
+void Task_backlight(void *parameters);
+void InitTask_backlight(void);
+void InitTask_cdc_rx(void);
 void InitTask_led_blink(void);
 void InitTask_regulator(void);
 void InitTask_measure(void);
+void InitTask_cdc_rx_tx(void);
 
 /*! \brief Opens the communication port
  * This is called by CDC interface when USB Host enable it.

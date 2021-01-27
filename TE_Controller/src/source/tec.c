@@ -65,31 +65,34 @@ void	pin_set_output(uint8_t	pin, bool	output_flag, uint8_t	value){
 	port_pin_set_config(pin, &config_port_pin);
 }
 
-// Range from -1 to 0
-void	TEC_set_level(float	value){
+// Range from -1 to 1
+void	TEC_set_level(float	value)
+{
 	tcc_reset(&tcc_instance);
-	if(fpclassify(value) == FP_ZERO){//if(value == (float)0.0){//
-		// TEC OFF
+	if(fpclassify(value) == FP_ZERO || fpclassify(value) == FP_NAN)
+	{		
 		pin_set_output(PIN_SPGATE, true, 1);
 		pin_set_output(PIN_SNGATE, true, 0);
 		pin_set_output(PIN_LPGATE, true, 1);
 		pin_set_output(PIN_LNGATE, true, 0);
-		}else{
+	}
+	else
+	{
 		struct port_config config_port_pin;
 		port_get_config_defaults(&config_port_pin);
-		config_port_pin.direction = PORT_PIN_DIR_INPUT;
-		config_port_pin.input_pull = PORT_PIN_PULL_NONE;
+		config_port_pin.direction	= PORT_PIN_DIR_INPUT;
+		config_port_pin.input_pull	= PORT_PIN_PULL_NONE;
 		port_pin_set_config(PIN_SNGATE, &config_port_pin);
 		
 		struct tcc_config config_tcc;
 		tcc_get_config_defaults(&config_tcc, CONF_PWM_MODULE);
-		config_tcc.counter.clock_prescaler = TCC_CLOCK_PRESCALER_DIV1;
-		config_tcc.counter.period = PWM_GCLK_PERIOD;
-		
-		config_tcc.compare.wave_generation = TCC_WAVE_GENERATION_SINGLE_SLOPE_PWM;
+		config_tcc.counter.clock_prescaler	= TCC_CLOCK_PRESCALER_DIV1;				
+		config_tcc.compare.wave_generation	= TCC_WAVE_GENERATION_SINGLE_SLOPE_PWM;
+		config_tcc.counter.period			= PWM_GCLK_PERIOD;
 		
 		uint8_t	pin_output, chan;
-		if(value > 0.0){
+		if(value > 0.0)
+		{
 			TEC_L_set(true);	// to +12
 			pin_set_output(PIN_SPGATE, true, 1);
 			pin_set_output(PIN_SNGATE, false, 0);
@@ -99,7 +102,9 @@ void	TEC_set_level(float	value){
 			config_tcc.pins.wave_out_pin_mux[pin_output] = MUX_PA17F_TCC0_WO7;
 
 			config_tcc.compare.match[chan] = PWM_GCLK_PERIOD*value;
-			}else{
+		}
+		else
+		{
 			TEC_L_set(false);	// to GND
 			pin_set_output(PIN_SPGATE, false, 0);
 			pin_set_output(PIN_SNGATE, true, 0);

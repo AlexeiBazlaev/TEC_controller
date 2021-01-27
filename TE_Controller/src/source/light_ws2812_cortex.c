@@ -30,7 +30,6 @@
 
 #define ws2812_DEL ws2812_DEL8 ws2812_DEL2
 
-
 void ws2812_sendarray(uint8_t *data,int datlen)
 {
 	uint8_t	gpio_pin = PIN_PA23;

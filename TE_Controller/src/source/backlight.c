@@ -31,7 +31,7 @@ void backlight_event_100ms(void){
 					led_data[0 + (LEN_WS2812/2 - i - 1)*3 + (LEN_WS2812/2)*3] = 0x00;
 					led_data[1 + (LEN_WS2812/2 - i - 1)*3 + (LEN_WS2812/2)*3] = 0xff;
 					led_data[2 + (LEN_WS2812/2 - i - 1)*3 + (LEN_WS2812/2)*3] = 0x00;
-					}else{
+				}else{
 					led_data[0 + i*3] = 0x00;
 					led_data[1 + i*3] = 0x00;
 					led_data[2 + i*3] = 0x00;
@@ -63,31 +63,31 @@ void backlight_event_1s(void){
 					led_data[1 + i*3] = 0xff;
 					led_data[2 + i*3] = 0xff;
 				}
-				}else if((s1_cnt % modes) == 1){
+			}else if((s1_cnt % modes) == 1){
 				for(uint16_t i=0; i < LEN_WS2812;i++){
 					led_data[0 + i*3] = 0xff;
 					led_data[1 + i*3] = 0x00;
 					led_data[2 + i*3] = 0x00;
 				}
-				}else if((s1_cnt % modes) == 2){
+			}else if((s1_cnt % modes) == 2){
 				for(uint16_t i=0; i < LEN_WS2812;i++){
 					led_data[0 + i*3] = 0x00;
 					led_data[1 + i*3] = 0xff;
 					led_data[2 + i*3] = 0x00;
 				}
-				}else if((s1_cnt % modes) == 3){
+			}else if((s1_cnt % modes) == 3){
 				for(uint16_t i=0; i < LEN_WS2812;i++){
 					led_data[0 + i*3] = 0x00;
 					led_data[1 + i*3] = 0x00;
 					led_data[2 + i*3] = 0xff;
 				}
-				}else if((s1_cnt % modes) == 4){
+			}else if((s1_cnt % modes) == 4){
 				for(uint16_t i=0; i < LEN_WS2812;i++){
 					led_data[0 + i*3] = 0x00;
 					led_data[1 + i*3] = 0x00;
 					led_data[2 + i*3] = 0x00;
 				}
-				}else if((s1_cnt % modes) == 5){
+			}else if((s1_cnt % modes) == 5){
 				mode_run_light=true;
 				mode_run_light_cnt=0;
 			}
@@ -111,13 +111,14 @@ void backlight_init(void){
 }
 
 void backlight_ws2812_sendarray(void){
-	cpu_irq_disable();
+	portENTER_CRITICAL();//cpu_irq_disable(); 
 	ws2812_sendarray(led_data,sizeof(led_data));
-	cpu_irq_enable();	
+	portEXIT_CRITICAL();//cpu_irq_enable();	
 }
 
 void backlight_color_show(uint8_t R, uint8_t G, uint8_t B){
-	for(uint16_t i=0; i < LEN_WS2812; i++){
+	for(uint16_t i=0; i < LEN_WS2812; i++)
+	{
 		led_data[0 + i*3] = G;
 		led_data[1 + i*3] = R;
 		led_data[2 + i*3] = B;

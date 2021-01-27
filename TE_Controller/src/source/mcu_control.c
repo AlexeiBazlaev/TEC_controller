@@ -11,9 +11,14 @@
 #include "adn8831.h"
 #include "tm_onewire.h"
 #include "tm_ds18b20.h"
-
+#include "adc_user.h"
 void	MCU_control_init(void){
 	
+}
+
+float	GetTecCurrent(float currentSenseResistence)
+{
+	return adc_get_V_spec(chan_CS)/currentSenseResistence;
 }
 
 void	MCU_control(void){	
@@ -56,7 +61,7 @@ void	MCU_control(void){
 	char	DS1820_Temp_str[MAX_STR_FLOAT];
 	//bool 	ow_connected __attribute__((used)) =false;
 	float	DS1820_temp=0.0;
-	cpu_irq_disable();
+	//cpu_irq_disable();
 	if (TM_OneWire_First(&ow_instance)) {
 		//ow_connected=true;
 		if(TM_DS18B20_Is(ow_instance.ROM_NO)){
@@ -71,7 +76,7 @@ void	MCU_control(void){
 			}
 		}
 	}
-	cpu_irq_enable();
+	//cpu_irq_enable();
 	make_float2str(DS1820_Temp_str, MAX_STR_FLOAT, (float)DS1820_temp);
 	
 	//	printf("Info: t_MCU: %10s, t_TEC:%10s, Vin_LFB: %6s, Vin_SFB: %6s, Vin_CS: %6s, DHT22_Temp: %s, DHT22_Hum: %s, OW_STATE: %d, DS1820_Temp: %s\r\n",t_MCU_str, t_TEC_str, Vin_LFB_str, Vin_SFB_str, Vin_CS_str, DHT22_Temp, DHT22_Hum, (int)ow_connected, DS1820_Temp_str);
