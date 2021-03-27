@@ -16,9 +16,9 @@ void	MCU_control_init(void){
 	
 }
 
-float	GetTecCurrent(float currentSenseResistence)
-{
-	return adc_get_V_spec(chan_CS)/currentSenseResistence;
+float	GetTecCurrent(float v_cs, float v_ref, float r_cs, float gain)
+{	
+	return ((v_cs - v_ref)/(r_cs*gain));
 }
 
 void	MCU_control(void){	

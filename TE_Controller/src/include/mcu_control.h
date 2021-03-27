@@ -13,6 +13,6 @@
 
 void	MCU_control_init(void);
 void	MCU_control(void);
-float	GetTecCurrent(float currentSenseResistence);
+float	GetTecCurrent(float v_cs, float v_ref, float r_cs, float gain);
 
 #endif /* MCU_CONTROL_H_ */

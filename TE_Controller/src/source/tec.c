@@ -10,7 +10,7 @@
 #include "adc_user.h"
 #include "dac_user.h"
 struct tcc_module tcc_instance;
-extern struct dac_module dac_instance;
+
 bool VTEC_read(float	*p_Vin, float	*p_VTEC){
 	float Vin=  adc_get_V_spec(chan_VTEC);
 	if(p_Vin){
@@ -120,10 +120,12 @@ void	TEC_set_level(float	value)
 		tcc_enable(&tcc_instance);
 	}
 }
-
+#ifdef USE_ADN8831
+extern struct dac_module dac_instance;
 void	TEC_set_TEMPSET_volt(float	value)
 {	
 	float		Uref=3.3;
 	uint16_t	dig_value = (value*1024)/Uref;
 	dac_chan_write(&dac_instance, DAC_CHANNEL_0, dig_value);
 }
+#endif //USE_ADN8831

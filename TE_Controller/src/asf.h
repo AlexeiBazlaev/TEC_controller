@@ -60,10 +60,6 @@
 #include <compiler.h>
 #include <status_codes.h>
 
-// From module: DAC - Digital-to-Analog Converter (Callback APIs)
-#include <dac.h>
-#include <dac_callback.h>
-
 // From module: Delay routines
 #include <delay.h>
 
@@ -95,11 +91,17 @@
 // From module: Interrupt management - SAM implementation
 #include <interrupt.h>
 
+// From module: NVM - Non-Volatile Memory
+#include <nvm.h>
+
 // From module: PORT - GPIO Pin Control
 #include <port.h>
 
 // From module: Part identification macros
 #include <parts.h>
+
+// From module: Read While Write EEPROM Emulator Service
+#include <rww_eeprom.h>
 
 // From module: SAM D21/R21/D11/L21/DA1/L22 USB Dual role interface
 #include <usb_dual.h>

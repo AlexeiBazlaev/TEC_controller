@@ -26,24 +26,23 @@
     <OverrideVtorValue>exception_table</OverrideVtorValue>
     <BootSegment>2</BootSegment>
     <ResetRule>0</ResetRule>
-    <eraseonlaunchrule>0</eraseonlaunchrule>
+    <eraseonlaunchrule>1</eraseonlaunchrule>
     <EraseKey />
     <AsfFrameworkConfig>
       <framework-data>
         <options>
           <option id="common.boards" value="Add" config="" content-id="Atmel.ASF" />
-          <option id="common.services.basic.sleepmgr" value="Add" config="" content-id="Atmel.ASF" />
           <option id="common.services.usb.class.device" value="Add" config="cdc_stdio" content-id="Atmel.ASF" />
           <option id="common.utils.interrupt" value="Add" config="" content-id="Atmel.ASF" />
           <option id="common2.services.delay" value="Add" config="systick" content-id="Atmel.ASF" />
           <option id="sam0.drivers.adc" value="Add" config="callback" content-id="Atmel.ASF" />
-          <option id="sam0.drivers.dac" value="Add" config="callback" content-id="Atmel.ASF" />
           <option id="sam0.drivers.port" value="Add" config="" content-id="Atmel.ASF" />
           <option id="sam0.drivers.sercom.usart" value="Add" config="callback" content-id="Atmel.ASF" />
           <option id="sam0.drivers.system" value="Add" config="" content-id="Atmel.ASF" />
-          <option id="sam0.drivers.tcc" value="Add" config="polled" content-id="Atmel.ASF" />
-          <option id="thirdparty.os.freertos.version" value="Add" config="10.0.0" content-id="Atmel.ASF" />
           <option id="sam0.drivers.tc" value="Add" config="callback" content-id="Atmel.ASF" />
+          <option id="sam0.drivers.tcc" value="Add" config="polled" content-id="Atmel.ASF" />
+          <option id="sam0.services.rww_eeprom_emulator" value="Add" config="" content-id="Atmel.ASF" />
+          <option id="thirdparty.os.freertos.version" value="Add" config="10.0.0" content-id="Atmel.ASF" />
           <option id="common.services.usb.class.cdc.device.example" value="Add" config="" content-id="Atmel.ASF" />
           <option id="common.utils" value="Add" config="" content-id="Atmel.ASF" />
           <option id="sam0.utils.cmsis.samd21.source.template" value="Add" config="" content-id="Atmel.ASF" />
@@ -331,16 +330,18 @@
           <file path="src/ASF/sam0/drivers/adc/adc_sam_d_r_h/adc.c" framework="" version="3.49.1" source="sam0\drivers\adc\adc_sam_d_r_h\adc.c" changed="False" content-id="Atmel.ASF" />
           <file path="src/ASF/sam0/drivers/adc/adc_sam_d_r_h/adc_callback.c" framework="" version="3.49.1" source="sam0\drivers\adc\adc_sam_d_r_h\adc_callback.c" changed="False" content-id="Atmel.ASF" />
           <file path="src/ASF/sam0/drivers/adc/adc_sam_d_r_h/adc_feature.h" framework="" version="3.49.1" source="sam0\drivers\adc\adc_sam_d_r_h\adc_feature.h" changed="False" content-id="Atmel.ASF" />
-          <file path="src/ASF/sam0/drivers/dac/dac.h" framework="" version="3.49.1" source="sam0\drivers\dac\dac.h" changed="False" content-id="Atmel.ASF" />
-          <file path="src/ASF/sam0/drivers/dac/dac_callback.h" framework="" version="3.49.1" source="sam0\drivers\dac\dac_callback.h" changed="False" content-id="Atmel.ASF" />
-          <file path="src/ASF/sam0/drivers/dac/dac_sam_d_c_h/dac.c" framework="" version="3.49.1" source="sam0\drivers\dac\dac_sam_d_c_h\dac.c" changed="False" content-id="Atmel.ASF" />
-          <file path="src/ASF/sam0/drivers/dac/dac_sam_d_c_h/dac_callback.c" framework="" version="3.49.1" source="sam0\drivers\dac\dac_sam_d_c_h\dac_callback.c" changed="False" content-id="Atmel.ASF" />
-          <file path="src/ASF/sam0/drivers/dac/dac_sam_d_c_h/dac_feature.h" framework="" version="3.49.1" source="sam0\drivers\dac\dac_sam_d_c_h\dac_feature.h" changed="False" content-id="Atmel.ASF" />
           <file path="src/ASF/sam0/drivers/tcc/tcc.c" framework="" version="3.49.1" source="sam0\drivers\tcc\tcc.c" changed="False" content-id="Atmel.ASF" />
           <file path="src/ASF/sam0/drivers/tcc/quick_start_buffering/qs_tcc_buffering.h" framework="" version="3.49.1" source="sam0\drivers\tcc\quick_start_buffering\qs_tcc_buffering.h" changed="False" content-id="Atmel.ASF" />
           <file path="src/ASF/sam0/drivers/tcc/quick_start_dma/qs_tcc_dma.h" framework="" version="3.49.1" source="sam0\drivers\tcc\quick_start_dma\qs_tcc_dma.h" changed="False" content-id="Atmel.ASF" />
           <file path="src/ASF/sam0/drivers/tcc/tcc.h" framework="" version="3.49.1" source="sam0\drivers\tcc\tcc.h" changed="False" content-id="Atmel.ASF" />
           <file path="src/ASF/sam0/drivers/tcc/quick_start/qs_tcc_basic.h" framework="" version="3.49.1" source="sam0\drivers\tcc\quick_start\qs_tcc_basic.h" changed="False" content-id="Atmel.ASF" />
+          <file path="src/ASF/sam0/drivers/nvm/nvm.c" framework="" version="3.49.1" source="sam0\drivers\nvm\nvm.c" changed="False" content-id="Atmel.ASF" />
+          <file path="src/ASF/sam0/drivers/nvm/quick_start_basic/qs_nvm_basic.h" framework="" version="3.49.1" source="sam0\drivers\nvm\quick_start_basic\qs_nvm_basic.h" changed="False" content-id="Atmel.ASF" />
+          <file path="src/ASF/sam0/drivers/nvm/nvm.h" framework="" version="3.49.1" source="sam0\drivers\nvm\nvm.h" changed="False" content-id="Atmel.ASF" />
+          <file path="src/ASF/sam0/services/eeprom/emulator/rwwee_array/rww_eeprom.c" framework="" version="3.49.1" source="sam0\services\eeprom\emulator\rwwee_array\rww_eeprom.c" changed="False" content-id="Atmel.ASF" />
+          <file path="src/ASF/sam0/services/eeprom/emulator/rwwee_array/rww_eeprom.h" framework="" version="3.49.1" source="sam0\services\eeprom\emulator\rwwee_array\rww_eeprom.h" changed="False" content-id="Atmel.ASF" />
+          <file path="src/ASF/sam0/services/eeprom/emulator/rwwee_array/quick_start/qs_emulator_basic.h" framework="" version="3.49.1" source="sam0\services\eeprom\emulator\rwwee_array\quick_start\qs_emulator_basic.h" changed="False" content-id="Atmel.ASF" />
+          <file path="src/Config/conf_rwwee.h" framework="" version="3.49.1" source="sam0\services\eeprom\emulator\rwwee_array\module_config\conf_rwwee.h" changed="False" content-id="Atmel.ASF" />
           <file path="src/ASF/sam0/drivers/tc/tc_interrupt.c" framework="" version="3.49.1" source="sam0\drivers\tc\tc_interrupt.c" changed="False" content-id="Atmel.ASF" />
           <file path="src/ASF/sam0/drivers/tc/tc_interrupt.h" framework="" version="3.49.1" source="sam0\drivers\tc\tc_interrupt.h" changed="False" content-id="Atmel.ASF" />
           <file path="src/ASF/sam0/drivers/tc/tc.h" framework="" version="3.49.1" source="sam0\drivers\tc\tc.h" changed="False" content-id="Atmel.ASF" />
@@ -394,7 +395,6 @@
       <Value>__FREERTOS__</Value>
       <Value>SYSTICK_MODE</Value>
       <Value>ADC_CALLBACK_MODE=true</Value>
-      <Value>DAC_CALLBACK_MODE=true</Value>
       <Value>TCC_ASYNC=false</Value>
       <Value>TC_ASYNC=true</Value>
     </ListValues>
@@ -443,9 +443,9 @@
       <Value>../src/ASF/common2/services/delay/sam0</Value>
       <Value>../src/ASF/sam0/drivers/adc</Value>
       <Value>../src/ASF/sam0/drivers/adc/adc_sam_d_r_h</Value>
-      <Value>../src/ASF/sam0/drivers/dac</Value>
-      <Value>../src/ASF/sam0/drivers/dac/dac_sam_d_c_h</Value>
       <Value>../src/ASF/sam0/drivers/tcc</Value>
+      <Value>../src/ASF/sam0/drivers/nvm</Value>
+      <Value>../src/ASF/sam0/services/eeprom/emulator/rwwee_array</Value>
       <Value>../src/ASF/sam0/drivers/tc</Value>
       <Value>../src/ASF/sam0/drivers/tc/tc_sam_d_r_h</Value>
     </ListValues>
@@ -513,14 +513,14 @@
       <Value>../src/ASF/common2/services/delay/sam0</Value>
       <Value>../src/ASF/sam0/drivers/adc</Value>
       <Value>../src/ASF/sam0/drivers/adc/adc_sam_d_r_h</Value>
-      <Value>../src/ASF/sam0/drivers/dac</Value>
-      <Value>../src/ASF/sam0/drivers/dac/dac_sam_d_c_h</Value>
       <Value>../src/ASF/sam0/drivers/tcc</Value>
+      <Value>../src/ASF/sam0/drivers/nvm</Value>
+      <Value>../src/ASF/sam0/services/eeprom/emulator/rwwee_array</Value>
       <Value>../src/ASF/sam0/drivers/tc</Value>
       <Value>../src/ASF/sam0/drivers/tc/tc_sam_d_r_h</Value>
     </ListValues>
   </armgcc.assembler.general.IncludePaths>
-  <armgcc.preprocessingassembler.general.AssemblerFlags>-DARM_MATH_CM0PLUS=true -DBOARD=SAMD21_XPLAINED_PRO -DEXTINT_CALLBACK_MODE=true -DUDD_ENABLE -DUSART_CALLBACK_MODE=true -DUSB_DEVICE_LPM_SUPPORT -D__SAMD21J18A__ -D__FREERTOS__ -DSYSTICK_MODE -DADC_CALLBACK_MODE=true -DDAC_CALLBACK_MODE=true -DTCC_ASYNC=false -DTC_ASYNC=true</armgcc.preprocessingassembler.general.AssemblerFlags>
+  <armgcc.preprocessingassembler.general.AssemblerFlags>-DARM_MATH_CM0PLUS=true -DBOARD=SAMD21_XPLAINED_PRO -DEXTINT_CALLBACK_MODE=true -DUDD_ENABLE -DUSART_CALLBACK_MODE=true -DUSB_DEVICE_LPM_SUPPORT -D__SAMD21J18A__ -D__FREERTOS__ -DSYSTICK_MODE -DADC_CALLBACK_MODE=true -DTCC_ASYNC=false -DTC_ASYNC=true</armgcc.preprocessingassembler.general.AssemblerFlags>
   <armgcc.preprocessingassembler.general.IncludePaths>
     <ListValues>
       <Value>../src</Value>
@@ -565,9 +565,9 @@
       <Value>../src/ASF/common2/services/delay/sam0</Value>
       <Value>../src/ASF/sam0/drivers/adc</Value>
       <Value>../src/ASF/sam0/drivers/adc/adc_sam_d_r_h</Value>
-      <Value>../src/ASF/sam0/drivers/dac</Value>
-      <Value>../src/ASF/sam0/drivers/dac/dac_sam_d_c_h</Value>
       <Value>../src/ASF/sam0/drivers/tcc</Value>
+      <Value>../src/ASF/sam0/drivers/nvm</Value>
+      <Value>../src/ASF/sam0/services/eeprom/emulator/rwwee_array</Value>
       <Value>../src/ASF/sam0/drivers/tc</Value>
       <Value>../src/ASF/sam0/drivers/tc/tc_sam_d_r_h</Value>
     </ListValues>
@@ -585,7 +585,6 @@
   <armgcc.common.outputfiles.srec>True</armgcc.common.outputfiles.srec>
   <armgcc.compiler.symbols.DefSymbols>
     <ListValues>
-      <Value>DEBUG</Value>
       <Value>BOARD=USER_BOARD</Value>
       <Value>__SAMD21E16B__</Value>
       <Value>EXTINT_CALLBACK_MODE=true</Value>
@@ -596,9 +595,9 @@
       <Value>__FREERTOS__</Value>
       <Value>SYSTICK_MODE</Value>
       <Value>ADC_CALLBACK_MODE=true</Value>
-      <Value>DAC_CALLBACK_MODE=true</Value>
       <Value>TCC_ASYNC=false</Value>
       <Value>TC_ASYNC=true</Value>
+      <Value>ARM_PID</Value>
     </ListValues>
   </armgcc.compiler.symbols.DefSymbols>
   <armgcc.compiler.directories.IncludePaths>
@@ -646,13 +645,14 @@
       <Value>../src/ASF/common2/services/delay/sam0</Value>
       <Value>../src/ASF/sam0/drivers/adc</Value>
       <Value>../src/ASF/sam0/drivers/adc/adc_sam_d_r_h</Value>
-      <Value>../src/ASF/sam0/drivers/dac</Value>
-      <Value>../src/ASF/sam0/drivers/dac/dac_sam_d_c_h</Value>
       <Value>../src/ASF/sam0/drivers/tcc</Value>
+      <Value>../src/ASF/sam0/drivers/nvm</Value>
+      <Value>../src/ASF/sam0/services/eeprom/emulator/rwwee_array</Value>
       <Value>../src/ASF/sam0/drivers/tc</Value>
       <Value>../src/ASF/sam0/drivers/tc/tc_sam_d_r_h</Value>
     </ListValues>
   </armgcc.compiler.directories.IncludePaths>
+  <armgcc.compiler.optimization.level>Optimize for size (-Os)</armgcc.compiler.optimization.level>
   <armgcc.compiler.optimization.OtherFlags>-fdata-sections</armgcc.compiler.optimization.OtherFlags>
   <armgcc.compiler.optimization.PrepareFunctionsForGarbageCollection>True</armgcc.compiler.optimization.PrepareFunctionsForGarbageCollection>
   <armgcc.compiler.optimization.DebugLevel>Maximum (-g3)</armgcc.compiler.optimization.DebugLevel>
@@ -717,15 +717,15 @@
       <Value>../src/ASF/common2/services/delay/sam0</Value>
       <Value>../src/ASF/sam0/drivers/adc</Value>
       <Value>../src/ASF/sam0/drivers/adc/adc_sam_d_r_h</Value>
-      <Value>../src/ASF/sam0/drivers/dac</Value>
-      <Value>../src/ASF/sam0/drivers/dac/dac_sam_d_c_h</Value>
       <Value>../src/ASF/sam0/drivers/tcc</Value>
+      <Value>../src/ASF/sam0/drivers/nvm</Value>
+      <Value>../src/ASF/sam0/services/eeprom/emulator/rwwee_array</Value>
       <Value>../src/ASF/sam0/drivers/tc</Value>
       <Value>../src/ASF/sam0/drivers/tc/tc_sam_d_r_h</Value>
     </ListValues>
   </armgcc.assembler.general.IncludePaths>
   <armgcc.assembler.debugging.DebugLevel>Default (-g)</armgcc.assembler.debugging.DebugLevel>
-  <armgcc.preprocessingassembler.general.AssemblerFlags>-DARM_MATH_CM0PLUS=true -DBOARD=USER_BOARD -DEXTINT_CALLBACK_MODE=true -DUDD_ENABLE -DUSART_CALLBACK_MODE=true -DUSB_DEVICE_LPM_SUPPORT -D__SAMD21E16B__ -D__FREERTOS__ -DSYSTICK_MODE -DADC_CALLBACK_MODE=true -DDAC_CALLBACK_MODE=true -DTCC_ASYNC=false -DTC_ASYNC=true</armgcc.preprocessingassembler.general.AssemblerFlags>
+  <armgcc.preprocessingassembler.general.AssemblerFlags>-DARM_MATH_CM0PLUS=true -DBOARD=USER_BOARD -DEXTINT_CALLBACK_MODE=true -DUDD_ENABLE -DUSART_CALLBACK_MODE=true -DUSB_DEVICE_LPM_SUPPORT -D__SAMD21E16B__ -D__FREERTOS__ -DSYSTICK_MODE -DADC_CALLBACK_MODE=true -DTCC_ASYNC=false -DTC_ASYNC=true</armgcc.preprocessingassembler.general.AssemblerFlags>
   <armgcc.preprocessingassembler.general.IncludePaths>
     <ListValues>
       <Value>../src</Value>
@@ -770,9 +770,9 @@
       <Value>../src/ASF/common2/services/delay/sam0</Value>
       <Value>../src/ASF/sam0/drivers/adc</Value>
       <Value>../src/ASF/sam0/drivers/adc/adc_sam_d_r_h</Value>
-      <Value>../src/ASF/sam0/drivers/dac</Value>
-      <Value>../src/ASF/sam0/drivers/dac/dac_sam_d_c_h</Value>
       <Value>../src/ASF/sam0/drivers/tcc</Value>
+      <Value>../src/ASF/sam0/drivers/nvm</Value>
+      <Value>../src/ASF/sam0/services/eeprom/emulator/rwwee_array</Value>
       <Value>../src/ASF/sam0/drivers/tc</Value>
       <Value>../src/ASF/sam0/drivers/tc/tc_sam_d_r_h</Value>
     </ListValues>
@@ -810,10 +810,10 @@
     <Folder Include="src\ASF\sam0\drivers\" />
     <Folder Include="src\ASF\sam0\drivers\adc\" />
     <Folder Include="src\ASF\sam0\drivers\adc\adc_sam_d_r_h\" />
-    <Folder Include="src\ASF\sam0\drivers\dac\" />
-    <Folder Include="src\ASF\sam0\drivers\dac\dac_sam_d_c_h\" />
     <Folder Include="src\ASF\sam0\drivers\extint\" />
     <Folder Include="src\ASF\sam0\drivers\extint\extint_sam_d_r_h\" />
+    <Folder Include="src\ASF\sam0\drivers\nvm\" />
+    <Folder Include="src\ASF\sam0\drivers\nvm\quick_start_basic\" />
     <Folder Include="src\ASF\sam0\drivers\port\" />
     <Folder Include="src\ASF\sam0\drivers\port\quick_start\" />
     <Folder Include="src\ASF\sam0\drivers\sercom\" />
@@ -842,6 +842,11 @@
     <Folder Include="src\ASF\sam0\drivers\usb\" />
     <Folder Include="src\ASF\sam0\drivers\usb\stack_interface\" />
     <Folder Include="src\ASF\sam0\drivers\usb\usb_sam_d_r\" />
+    <Folder Include="src\ASF\sam0\services\" />
+    <Folder Include="src\ASF\sam0\services\eeprom\" />
+    <Folder Include="src\ASF\sam0\services\eeprom\emulator\" />
+    <Folder Include="src\ASF\sam0\services\eeprom\emulator\rwwee_array\" />
+    <Folder Include="src\ASF\sam0\services\eeprom\emulator\rwwee_array\quick_start\" />
     <Folder Include="src\ASF\sam0\utils\" />
     <Folder Include="src\ASF\sam0\utils\cmsis\" />
     <Folder Include="src\ASF\sam0\utils\cmsis\samd21\" />
@@ -911,21 +916,6 @@
     <None Include="src\ASF\sam0\drivers\adc\adc_sam_d_r_h\adc_feature.h">
       <SubType>compile</SubType>
     </None>
-    <None Include="src\ASF\sam0\drivers\dac\dac.h">
-      <SubType>compile</SubType>
-    </None>
-    <None Include="src\ASF\sam0\drivers\dac\dac_callback.h">
-      <SubType>compile</SubType>
-    </None>
-    <Compile Include="src\ASF\sam0\drivers\dac\dac_sam_d_c_h\dac.c">
-      <SubType>compile</SubType>
-    </Compile>
-    <Compile Include="src\ASF\sam0\drivers\dac\dac_sam_d_c_h\dac_callback.c">
-      <SubType>compile</SubType>
-    </Compile>
-    <None Include="src\ASF\sam0\drivers\dac\dac_sam_d_c_h\dac_feature.h">
-      <SubType>compile</SubType>
-    </None>
     <None Include="src\ASF\sam0\drivers\tcc\quick_start_buffering\qs_tcc_buffering.h">
       <SubType>compile</SubType>
     </None>
@@ -935,10 +925,22 @@
     <None Include="src\ASF\sam0\drivers\tcc\quick_start\qs_tcc_basic.h">
       <SubType>compile</SubType>
     </None>
+    <Compile Include="src\ASF\sam0\drivers\nvm\nvm.c">
+      <SubType>compile</SubType>
+    </Compile>
+    <None Include="src\ASF\sam0\drivers\nvm\quick_start_basic\qs_nvm_basic.h">
+      <SubType>compile</SubType>
+    </None>
+    <None Include="src\ASF\sam0\drivers\nvm\nvm.h">
+      <SubType>compile</SubType>
+    </None>
     <Compile Include="src\ASF\sam0\drivers\tcc\tcc.c">
       <SubType>compile</SubType>
     </Compile>
     <None Include="src\ASF\sam0\drivers\tcc\tcc.h">
+      <SubType>compile</SubType>
+    </None>
+    <None Include="src\ASF\sam0\services\eeprom\emulator\rwwee_array\quick_start\qs_emulator_basic.h">
       <SubType>compile</SubType>
     </None>
     <None Include="src\ASF\sam0\drivers\tc\tc.h">
@@ -953,6 +955,12 @@
     <Compile Include="src\ASF\sam0\drivers\tc\tc_sam_d_r_h\tc.c">
       <SubType>compile</SubType>
     </Compile>
+    <Compile Include="src\ASF\sam0\services\eeprom\emulator\rwwee_array\rww_eeprom.c">
+      <SubType>compile</SubType>
+    </Compile>
+    <None Include="src\ASF\sam0\services\eeprom\emulator\rwwee_array\rww_eeprom.h">
+      <SubType>compile</SubType>
+    </None>
     <Compile Include="src\ASF\sam0\utils\stdio\read.c">
       <SubType>compile</SubType>
     </Compile>
@@ -1742,6 +1750,9 @@
     <Compile Include="src\ASF\sam0\utils\syscalls\gcc\syscalls.c">
       <SubType>compile</SubType>
     </Compile>
+    <None Include="src\config\conf_rwwee.h">
+      <SubType>compile</SubType>
+    </None>
     <Compile Include="src\include\adc_user.h">
       <SubType>compile</SubType>
     </Compile>
@@ -1751,10 +1762,31 @@
     <Compile Include="src\include\backlight.h">
       <SubType>compile</SubType>
     </Compile>
+    <Compile Include="src\include\bme280.h">
+      <SubType>compile</SubType>
+    </Compile>
+    <Compile Include="src\include\bme280_defs.h">
+      <SubType>compile</SubType>
+    </Compile>
+    <Compile Include="src\include\BME280_task.h">
+      <SubType>compile</SubType>
+    </Compile>
+    <Compile Include="src\include\cmd.h">
+      <SubType>compile</SubType>
+    </Compile>
     <Compile Include="src\include\dac_user.h">
       <SubType>compile</SubType>
     </Compile>
     <Compile Include="src\include\dht.h">
+      <SubType>compile</SubType>
+    </Compile>
+    <Compile Include="src\include\dht22.h">
+      <SubType>compile</SubType>
+    </Compile>
+    <Compile Include="src\include\eeprom.h">
+      <SubType>compile</SubType>
+    </Compile>
+    <Compile Include="src\include\i2c_master_user.h">
       <SubType>compile</SubType>
     </Compile>
     <Compile Include="src\include\light_ws2812_cortex.h">
@@ -1764,6 +1796,9 @@
       <SubType>compile</SubType>
     </Compile>
     <Compile Include="src\include\ntc.h">
+      <SubType>compile</SubType>
+    </Compile>
+    <Compile Include="src\include\pid_regulator.h">
       <SubType>compile</SubType>
     </Compile>
     <Compile Include="src\include\power_regulator.h">
@@ -1787,6 +1822,9 @@
     <Compile Include="src\include\tm_onewire.h">
       <SubType>compile</SubType>
     </Compile>
+    <Compile Include="src\include\usb_hub.h">
+      <SubType>compile</SubType>
+    </Compile>
     <Compile Include="src\include\ws2812.h">
       <SubType>compile</SubType>
     </Compile>
@@ -1796,25 +1834,25 @@
     <Compile Include="src\source\adc_user.c">
       <SubType>compile</SubType>
     </Compile>
-    <Compile Include="src\source\adn8831.c">
-      <SubType>compile</SubType>
-    </Compile>
     <Compile Include="src\source\backlight.c">
       <SubType>compile</SubType>
     </Compile>
-    <Compile Include="src\source\dac_user.c">
+    <Compile Include="src\source\cmd.c">
       <SubType>compile</SubType>
     </Compile>
     <Compile Include="src\source\dht.c">
       <SubType>compile</SubType>
     </Compile>
+    <Compile Include="src\source\eeprom.c">
+      <SubType>compile</SubType>
+    </Compile>
     <Compile Include="src\source\light_ws2812_cortex.c">
       <SubType>compile</SubType>
     </Compile>
-    <Compile Include="src\source\mcu_control.c">
+    <Compile Include="src\source\ntc.c">
       <SubType>compile</SubType>
     </Compile>
-    <Compile Include="src\source\ntc.c">
+    <Compile Include="src\source\pid_regulator.c">
       <SubType>compile</SubType>
     </Compile>
     <Compile Include="src\source\power_regulator.c">
@@ -1836,6 +1874,9 @@
       <SubType>compile</SubType>
     </Compile>
     <Compile Include="src\source\tm_onewire.c">
+      <SubType>compile</SubType>
+    </Compile>
+    <Compile Include="src\source\usb_hub.c">
       <SubType>compile</SubType>
     </Compile>
     <Compile Include="src\source\ws2812.c">

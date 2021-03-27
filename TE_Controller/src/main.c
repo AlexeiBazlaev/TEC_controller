@@ -27,52 +27,157 @@
  */
 
 
-#include <asf.h>
-#include "conf_usb.h"
-#include "ui.h"
-#include "uart.h"
+//#include <asf.h>
 #include <string.h>
-//#include <stdlib.h>
+#include <arm_math.h>
+#include "ui.h"
+#include "conf_usb.h"
+#include "uart.h"
 #include "realsence.h"
 #include "ntc.h"
-#include <arm_math.h>
-#include "dht.h"
-#include "mcu_control.h"
+#include "dht22.h"
 #include "adc_user.h"
 #include "power_regulator.h"
 #include "tec.h"
 #include "backlight.h"
 #include "ws2812.h"
+#include "cmd.h"
+#include "usb_hub.h"
+#include "eeprom.h"
+//#include "mcu_control.h"
+//#include "adn8831.h"
+//#include "tm_ds18b20.h"
 
 #define PORT_STDIO	0
 #define PORT_DATA	1
-
+extern CMD_t command;
 uint16_t adc_value = 100;
-//char rcvBuff[128] = {0};
-char str[128] = {0};
-UBaseType_t uxHighWaterMark_cdc_rx_check, uxHighWaterMark_cdc_tx;
-UBaseType_t uxHighWaterMark_led_blink, uxHighWaterMark_mesure, uxHighWaterMark_regulator, uxHighWaterMark_backlight;
+
 static volatile bool main_b_cdc_enable = false;
-struct measured_params	m_params;
+//struct measured_params	m_params;
 Controller_t Controller;
 
+#ifdef ARM_PID
+arm_pid_instance_f32  pid;
+#else
+PID_t pid;
+#ifdef PID_DIFF_CHANGE
+TickType_t tempMeasureTick;
+#endif
+#endif
+
+#define DEBUG_EEPROM
+#ifdef DEBUG	
+UBaseType_t uxHighWaterMark_cdc_rx, uxHighWaterMark_cdc_tx, uxHighWaterMark_measure,
+uxHighWaterMark_regulator, uxHighWaterMark_backlight;
+#define GET_STACK_HWM_CDC_RX()    uxHighWaterMark_cdc_rx	= uxTaskGetStackHighWaterMark( NULL );
+#define GET_STACK_HWM_CDC_TX()    uxHighWaterMark_cdc_tx	= uxTaskGetStackHighWaterMark( NULL );
+#define GET_STACK_HWM_MEASURE()	  uxTaskGetStackHighWaterMark( NULL );
+#define GET_STACK_HWM_REGULATOR() uxHighWaterMark_regulator = uxTaskGetStackHighWaterMark( NULL );
+#define GET_STACK_HWM_BACKLIGHT() uxHighWaterMark_backlight = uxTaskGetStackHighWaterMark( NULL );
+#else
+#define GET_STACK_HWM_CDC_RX()
+#define GET_STACK_HWM_CDC_TX()
+#define GET_STACK_HWM_MEASURE()
+#define GET_STACK_HWM_REGULATOR()
+#define GET_STACK_HWM_BACKLIGHT()
+#endif
+
 /************************************************************************
+* \fn int main(void)
 * \brief Main function. Execution starts here.
+* \param
+* \return
 ************************************************************************/
 int main(void)
 {
 	irq_initialize_vectors();
 	cpu_irq_enable();	
-	sleepmgr_init();
+	//sleepmgr_init();
 	system_init();	
-
-	InitTask_cdc_rx_tx();
-	InitTask_led_blink();//ui_init();//ui_powerdown();
-	InitTask_measure();
-	InitTask_regulator();
+	InitMCU();
+		
+	InitTask_cdc_rx_tx();	
+	InitTask_measure(); //InitTask_measure_DHT22();InitTask_led_blink();//ui_init();//ui_powerdown();
+	InitTask_regulator();	
+#ifndef DEBUG_REGULATOR	
 	InitTask_backlight();
+#endif	
 	vTaskStartScheduler();
 	__BKPT();
+}
+
+static void SetDefaultParams(void)
+{
+	Controller.setPoints.tempTecCamSide = TEC_TEMP_NORM;
+	Controller.setPoints.powerCoeff		= TEC_POWER_COEFF_DEFAULT;
+	command.tec_on = DISABLE;
+}
+void ReadEEParameters(void)
+{	
+	SetDefaultParams();
+#ifndef DEBUG_REGULATOR
+	uint16_t temp = Controller.setPoints.tempTecCamSide;	
+	if(ReadEEParam(&temp, TEC_TEMP_SETPOINT_MIN, TEC_TEMP_SETPOINT_MAX, EE_TEMP_SETPOINT) == STATUS_OK)		
+		Controller.setPoints.tempTecCamSide = temp;	
+	uint16_t powerCoeff = Controller.setPoints.powerCoeff;
+	if(ReadEEParam(&powerCoeff, TEC_POWER_COEFF_SETPOINT_MIN, TEC_POWER_COEFF_SETPOINT_MAX, EE_POWER_SETPOINT) == STATUS_OK)
+		Controller.setPoints.powerCoeff = powerCoeff;
+	uint16_t tecOn = command.tec_on;		
+	if(ReadEEParam(&tecOn, DISABLE, ENABLE, EE_TEC_STATE) == STATUS_OK)
+		command.tec_on = tecOn;
+#endif		
+}
+/************************************************************************
+* \fn void InitMCU(void)
+* \brief
+* \param
+* \return
+************************************************************************/
+void InitMCU(void)
+{	
+	led_configure_port_pins();
+	LED_Off(LED_PIN);	
+	configure_eeprom();
+	ReadEEParameters();	
+	usb_hub_init();			
+	rs_configure_port_pins();
+	rs_set(ENABLE);
+}
+
+/************************************************************************
+* \fn void ExecuteCommands(void)
+* \brief
+* \param
+* \return
+************************************************************************/
+void ExecuteCommands(void)
+{
+	rs_set(command.rs_on && command.tot_on);
+	usb_hub_reset(&command.usb_reset);	
+}
+
+
+/************************************************************************
+* \fn void measureADC(void)
+* \brief
+* \param
+* \return
+************************************************************************/
+void measureADC(MOV_AVG_BUF *movAvgBuf)
+{		
+	float temp = NTC_MCU_get_temp(NULL);	//Controller.temps.tecCamSide = NTC_MCU_get_temp(NULL);
+#ifndef ARM_PID
+#ifdef PID_DIFF_CHANGE
+	tempMeasureTick = xTaskGetTickCount();
+#endif
+#endif
+	Controller.temps.tecCamSide = GetMovAvg(movAvgBuf, temp, false);
+	Controller.temps.tecRadSide = NTC_TEC_get_temp(NULL, NULL);
+	Controller.tecState.tecV_N = adc_get_V_spec(chan_SFB)*ADC_MULTIPLIER;
+	Controller.tecState.tecV_P = adc_get_V_spec(chan_LFB)*ADC_MULTIPLIER;
+	float V_CS = adc_get_V_spec(chan_CS);
+	Controller.tecState.tecI   = GetTecCurrent(V_CS, V_REF, R_CS, AMP_GAIN);
 }
 
 
@@ -84,22 +189,41 @@ int main(void)
 ************************************************************************/
 void Task_measure(void *parameters)
 {
-	uxHighWaterMark_mesure = uxTaskGetStackHighWaterMark( NULL );
+	uint16_t delayCntr = 10;
+	MOV_AVG_BUF tecCamSideTempAvg = {
+		.bufFull = 0,
+		.idx = 0
+	};	
+	GET_STACK_HWM_MEASURE()
 	for (;;)
-	{
-		Controller.temps.MCU_Temp = NTC_MCU_get_temp(NULL);
-		Controller.temps.TEC_Temp = NTC_TEC_get_temp(NULL, NULL);
-		//measurement_DHT22();
-		Controller.tecState.tecV_N = adc_get_V_spec(chan_LFB);
-		Controller.tecState.tecV_P = adc_get_V_spec(chan_SFB);
-		Controller.tecState.tecI   = GetTecCurrent(CURRENT_SENSE_RESISTENCE);
-				
-		uxHighWaterMark_mesure = uxTaskGetStackHighWaterMark( NULL );
-		vTaskDelay(20);
+	{	
+		if(command.tot_on)
+		{						
+			measureADC(&tecCamSideTempAvg);		
+			if(!delayCntr--)
+			{
+				measurement_DHT22();
+				delayCntr = 1000;			
+			}				
+		}
+		GET_STACK_HWM_MEASURE()
+		portYIELD();// vTaskDelay(200);
 	}
 }
 
+inline void DataLock(void)
+{
+#ifdef USE_SEMAPHORE	
+	xSemaphoreTake(Controller.dataSem,portMAX_DELAY);
+#endif	
+}
 
+inline void DataUnlock(void)
+{
+#ifdef USE_SEMAPHORE	
+	xSemaphoreGive(Controller.dataSem);
+#endif	
+}
 /************************************************************************
 * \fn void Task_regulator(void *parameters)
 * \brief
@@ -107,13 +231,20 @@ void Task_measure(void *parameters)
 * \return
 ************************************************************************/
 void Task_regulator(void *parameters)
-{	
-	uxHighWaterMark_regulator = uxTaskGetStackHighWaterMark( NULL );
+{				
+	PID_Init(&pid);//command.tec_on = CMD_OFF;
+#ifndef ARM_PID
+	temprChange_t change;
+	change.initialized = false;	
+#endif				 
+	GET_STACK_HWM_REGULATOR();
 	for (;;)
-	{
-		temperature_control(Controller.temps.MCU_Temp, &m_params.TEC_Power, ENABLE);				
-		uxHighWaterMark_regulator = uxTaskGetStackHighWaterMark( NULL );
-		//vTaskDelay(1000);
+	{	
+		DataLock();			
+		TempPID_Regulator(command.tec_on && command.tot_on, &Controller, &pid);		
+		DataUnlock();	
+		GET_STACK_HWM_REGULATOR();
+		vTaskDelay(250);
 	}
 }
 
@@ -124,22 +255,26 @@ void Task_regulator(void *parameters)
 * \param
 * \return
 ************************************************************************/
+__attribute__((optimize("Os")))
 void Task_cdc_rx(void *parameters)
 {
 	#define PORT0  0
 	iram_size_t len = 0;
-	uxHighWaterMark_cdc_rx_check = uxTaskGetStackHighWaterMark( NULL );
-	
+	char readBuf[128] = {0};
+	GET_STACK_HWM_CDC_RX();	
 	while(true)
 	{
 		if(main_b_cdc_enable &&
 		(len = udi_cdc_multi_get_nb_received_data(PORT0)) > 0 &&
-		udi_cdc_read_no_polling(str, (len<=128)?len:128) > 0 )
-		{
-			str[len]=0;
-			printf("<%s\n", str);
+		udi_cdc_read_no_polling(readBuf, (len<=128)?len:128) > 0 )
+		{			
+			readBuf[len]=0; //if (udi_cdc_multi_is_tx_ready(PORT0))	printf("\r\n< %s", readBuf);
+			DataLock();
+			ProcessCommand(&command, readBuf);
+			ExecuteCommands();					
+			DataUnlock();
 		}
-		uxHighWaterMark_cdc_rx_check = uxTaskGetStackHighWaterMark( NULL );
+		GET_STACK_HWM_CDC_RX();
 	}
 }
 
@@ -150,50 +285,159 @@ void Task_cdc_rx(void *parameters)
 * \param
 * \return
 ************************************************************************/
+__attribute__((optimize("Os")))
 void Task_cdc_tx(void *parameters)
 {
-	#define PORT0  0
-	uxHighWaterMark_cdc_tx = uxTaskGetStackHighWaterMark( NULL );
-	
+	#define PORT0  0	
+	GET_STACK_HWM_CDC_TX();	
 	while(true)
 	{
-		if (main_b_cdc_enable && udi_cdc_multi_is_tx_ready(PORT0))
+		vTaskDelay(1000);			
+		if (main_b_cdc_enable && udi_cdc_multi_is_tx_ready(PORT0) && (command.tx_on || command.get_data) && command.tot_on)
 		{
-			if(fpclassify(Controller.temps.MCU_Temp) == FP_NAN)
-			printf(">NTC_MCU_TEMP = NAN\n\r");
+			if(command.get_data) command.get_data = DISABLE;
+#ifdef PID_DEBUG
+			char string[MAX_STR_FLOAT] ={0,};
+			make_float2str(string, MAX_STR_FLOAT, (float)Controller.temps.tecCamSide);
+			printf("%s\t", string);						
+			make_float2str(string, MAX_STR_FLOAT, (float)Controller.tecState.tecPower*100);
+			printf("%s\t", string);
+			make_float2str(string, MAX_STR_FLOAT, (float)Controller.temps.dewPoint);
+			printf("%s\t", string);
+			#ifdef ARM_PID
+			make_float2str(string, MAX_STR_FLOAT, pid.A0*pid.state[0]);
+			printf("%s\t", string);
+			make_float2str(string, MAX_STR_FLOAT, pid.A1*pid.state[1]);
+			printf("%s\t", string);
+			make_float2str(string, MAX_STR_FLOAT, pid.A2*pid.state[2]);
+			printf("%s\r\n", string);
+			#else
+			make_float2str(string, MAX_STR_FLOAT, (float)pid.var.P);
+			printf("%s\t", string);
+			make_float2str(string, MAX_STR_FLOAT, (float)pid.var.IVar);
+			printf("%s\t", string);
+			make_float2str(string, MAX_STR_FLOAT, (float)pid.var.D);
+			printf("%s\r\n", string);
+			#endif			
+#else
+			char string[MAX_STR_FLOAT] ={0,};
+			if(fpclassify(Controller.temps.tecCamSide) == FP_NAN)
+				printf("> Cam_Tmp = NAN\t");
 			else
-			printf(">NTC_MCU_TEMP = %d\n\r", (int)Controller.temps.MCU_Temp);//printf(">NTC_MCU_TEMP = %d, NTC_TEC_TEMP = %d\n\r", (int)Controller.temps.MCU_Temp, (int)Controller.temps.TEC_Temp);
-		}
-		LED_Toggle(LED_PIN);
-		vTaskDelay(1000);
-		uxHighWaterMark_cdc_tx = uxTaskGetStackHighWaterMark( NULL );
+			{
+				make_float2str(string, MAX_STR_FLOAT, (float)Controller.temps.tecCamSide);
+				printf("> Cam_Tmp = %s\t", string);
+			}
+			if(fpclassify(Controller.temps.tecRadSide) == FP_NAN)
+				printf("Rad_Tmp = NAN\t");
+			else
+			{
+				make_float2str(string, MAX_STR_FLOAT, (float)Controller.temps.tecRadSide);
+				printf("Rad_Tmp = %s\t", string);
+			}
+			make_float2str(string, MAX_STR_FLOAT, (float)Controller.tecState.tecPower*100);
+			printf("TEC_POW = %s\t", string);
+			make_float2str(string, MAX_STR_FLOAT, (float)Controller.tecState.tecI);
+			printf("TEC_I = %s\t", string);					
+			make_float2str(string, MAX_STR_FLOAT, Controller.tecState.tecV_P - Controller.tecState.tecV_N);
+			printf("TEC_V = %s\t", string);			
+			/*make_float2str(string, MAX_STR_FLOAT, (float)Controller.tecState.tecV_P);
+			printf("TEC_V_P = %s,\t", string);
+			make_float2str(string, MAX_STR_FLOAT, (float)Controller.tecState.tecV_N);
+			printf("TEC_V_N = %s,\t", string);	*/	
+			if(fpclassify(Controller.temps.DHT22_Temp) == FP_NAN || fpclassify(Controller.temps.DHT22_Hum) == FP_NAN)
+			{
+				printf("DHT_Tmp = NAN\t");
+				printf("DHT_Hum = NAN\t");
+				printf("Dew_Tmp = NAN\t");
+			}
+			else
+			{							
+				make_float2str(string, MAX_STR_FLOAT, (float)Controller.temps.DHT22_Temp);
+				printf("DHT_Tmp = %s\t", string);
+				make_float2str(string, MAX_STR_FLOAT, (float)Controller.temps.DHT22_Hum);
+				printf("DHT_Hum = %s\t", string);
+				make_float2str(string, MAX_STR_FLOAT, (float)Controller.temps.dewPoint);
+				printf("Dew_Tmp = %s\r\n", string);
+			}
+#endif
+		}				
+		GET_STACK_HWM_CDC_TX();
 	}
 }
 
 /************************************************************************
-* \fn void Task_led_blink(void *parameters)
+* \fn void Task_backlight(void *parameters)
 * \brief
 * \param
 * \return
 ************************************************************************/
 void Task_backlight(void *parameters)
-{	uint32_t cnt10 = 0;
-	uxHighWaterMark_backlight = uxTaskGetStackHighWaterMark( NULL );
+{
+	uint32_t cnt10 = 0, rgb = 0x00000000;
+	uint8_t bl_state = CMD_OFF;	
+	GET_STACK_HWM_BACKLIGHT();
 	while(1)
-	{	
-		backlight_color_show(255, 0, 0);
-		vTaskDelay(1000);
-		backlight_color_show(255, 100, 0);
-		vTaskDelay(1000);
-		backlight_color_show(0, 255, 0);
-		vTaskDelay(1000);
-		/*backlight_event_100ms();
-		vTaskDelay(100);		
-		if(!((++cnt10)%10))
-			backlight_event_1s();*/
-		uxHighWaterMark_backlight = uxTaskGetStackHighWaterMark( NULL );		
+	{
+		vTaskDelay(500);
+										
+		if(!command.tot_on)
+		{
+			bl_state = CMD_BL_RESET;
+			backlight_color_show(0, 0, 0);
+		} 
+		if( bl_state != command.bl_state || rgb != command.rgb_color.rgb)
+		{
+			bl_state = command.bl_state;
+			rgb = command.rgb_color.rgb;			
+		}		
+		else continue;
+		
+		if(bl_state >= CMD_BL_RESET && bl_state <= CMD_BL_DEMO && command.tot_on)
+		{			
+			uint8_t brightness = (command.rgb_color.color.brightness)&0xFF;			
+			if(bl_state == CMD_BL_RESET)
+				backlight_color_show(0, 0, 0);
+			else if(bl_state == CMD_BL_RED)			
+				backlight_color_show(brightness, 0, 0);			
+			else if(bl_state == CMD_BL_GREEN)
+				backlight_color_show(0, brightness, 0);		
+			else if(bl_state == CMD_BL_BLUE)
+				backlight_color_show(0, 0, brightness);
+			else if(bl_state == CMD_BL_YELLOW)
+			{
+				uint8_t red	  = ((brightness > 3)? brightness : 3);
+				uint8_t green = ((red       > 3)? brightness/2 : 1);
+				backlight_color_show(red, green, 0);
+			}
+			else if(bl_state == CMD_BL_WHITE)		
+				backlight_color_show(brightness, brightness, brightness);			
+			else if(bl_state == CMD_BL_RGB)
+			{
+				uint8_t norm = command.rgb_color.color.red;
+				if (command.rgb_color.color.green > norm) norm = command.rgb_color.color.green;
+				if (command.rgb_color.color.blue > norm) norm = command.rgb_color.color.blue;
+				uint32_t red	= (command.rgb_color.color.red*brightness/norm)&0xFF;				
+				uint32_t blue	= (command.rgb_color.color.blue*brightness/norm)&0xFF;
+				uint32_t green	= (command.rgb_color.color.green*brightness/norm)&0xFF;
+				backlight_color_show(red, green, blue);				
+			}
+			else if (bl_state == CMD_BL_DEMO)
+			{				
+				while(command.bl_state == CMD_BL_DEMO)
+				{
+					backlight_event_100ms();
+					vTaskDelay(100);
+					if(!((++cnt10)%10))
+					backlight_event_1s();
+					GET_STACK_HWM_BACKLIGHT();
+				}				
+			}					
+		}				
+		GET_STACK_HWM_BACKLIGHT();		
 	}
 }
+
 
 /************************************************************************
 * \fn void InitTask_cdc_rx_tx(void)
@@ -204,11 +448,12 @@ void Task_backlight(void *parameters)
 void InitTask_cdc_rx_tx(void)
 {
 	// Enable USB Stack Device	
-	stdio_usb_init();//udc_start();		
-	stdio_usb_enable();
-	
-	xTaskCreate(Task_cdc_rx, (const char*)"Task_cdc_rx", configMINIMAL_STACK_SIZE*1, NULL,configMAX_PRIORITIES-1, NULL);
+	stdio_usb_init();
+	stdio_usb_enable();	
+#ifndef DEBUG_REGULATOR	
+	xTaskCreate(Task_cdc_rx, (const char*)"Task_cdc_rx", configMINIMAL_STACK_SIZE*4, NULL,configMAX_PRIORITIES-1, NULL);		
 	xTaskCreate(Task_cdc_tx, (const char*)"Task_cdc_tx", configMINIMAL_STACK_SIZE*3, NULL,configMAX_PRIORITIES-1, NULL);
+#endif	
 }
 
 /************************************************************************
@@ -231,7 +476,13 @@ void InitTask_regulator(void)
 void InitTask_measure(void)
 {
 	configure_adc();
+#ifdef USE_SEMAPHORE	
+	Controller.dataSem=xSemaphoreCreateMutex();	
+#endif	
 	xTaskCreate(Task_measure, (const char*)"Task_measure", configMINIMAL_STACK_SIZE*2, NULL,configMAX_PRIORITIES-1, NULL);
+#ifdef BME280_TASK
+	xTaskCreate(vBME280_task, (const char*)"BME280_task", 5*configMINIMAL_STACK_SIZE, NULL, configMAX_PRIORITIES-1, &pxBME280Task);
+#endif
 }
 
 /************************************************************************
@@ -242,14 +493,46 @@ void InitTask_measure(void)
 ************************************************************************/
 void InitTask_backlight(void)
 {	
-	ws2812_configure_port_pins();
-	backlight_init();
+	ws2812_configure_port_pins();//backlight_init();	
 	backlight_mode_demo();	
+//#ifndef DEBUG_EEPROM	
 	xTaskCreate(Task_backlight, (const char*)"Task_backlight", configMINIMAL_STACK_SIZE*1, NULL,configMAX_PRIORITIES-1, NULL);
+//#endif	
 }
 
+#ifdef DHT22_TASK
+UBaseType_t uxHighWaterMark_mesure_DHT22;
+/************************************************************************
+* \fn void Task_measure_DHT22(void *parameters)
+* \brief
+* \param
+* \return
+************************************************************************/
+void Task_measure_DHT22(void *parameters)
+{
+	uxHighWaterMark_mesure_DHT22 = uxTaskGetStackHighWaterMark( NULL );
+	for (;;)
+	{
+		measurement_DHT22();
+		uxHighWaterMark_mesure_DHT22 = uxTaskGetStackHighWaterMark( NULL );
+		vTaskDelay(2000);
+	}
+}
+/************************************************************************
+* \fn void InitTask_measure(void)
+* \brief
+* \param
+* \return
+************************************************************************/
+void InitTask_measure_DHT22(void)
+{
+	DHT22_EIC_configure();
+	xTaskCreate(Task_measure_DHT22, (const char*)"Task_measure_DHT22", configMINIMAL_STACK_SIZE*1+28, NULL,configMAX_PRIORITIES-1, NULL);
+}
+#endif //DHT22_TASK
 
-
+#ifdef LED_BLINK_TASK
+UBaseType_t uxHighWaterMark_led_blink;
 /************************************************************************
 * \fn void Task_led_blink(void *parameters)
 * \brief
@@ -280,11 +563,131 @@ void InitTask_led_blink(void)
 {	
 	led_configure_port_pins();
 	LED_Off(LED_PIN);
-	//xTaskCreate(Task_led_blink, (const char*)"Task_led_blink", configMINIMAL_STACK_SIZE*2, NULL,configMAX_PRIORITIES-1, NULL);
+	xTaskCreate(Task_led_blink, (const char*)"Task_led_blink", configMINIMAL_STACK_SIZE*2, NULL,configMAX_PRIORITIES-1, NULL);
+}
+#endif //LED_BLINK_TASK
+
+#ifdef BME280_TASK
+
+#include "BME280_task.h"
+#include "i2c_master_user.h"
+xTaskHandle pxBME280Task;
+//xTimerHandle xTimerBME280;
+volatile uint8_t error_BME280=0;
+uint8_t BME280_ExpireCounter = 5;
+portTickType timeoutBME280 = 2000;
+Timer_t bme280Timer;
+extern sensorData_t sensor;
+extern struct bme280_dev bme280;
+extern struct bme280_data comp_data;
+extern uint32_t comp_pres;
+extern int32_t dewPoint;
+
+/************************************************************************
+* \fn void vBME280_task(void *parameters)
+* \brief
+* \param
+* \return
+************************************************************************/
+portTASK_FUNCTION (vBME280_task, pvParameters)
+{
+	static int8_t rslt __attribute__((used)) = BME280_OK;
+	//volatile uint8_t len;
+	int8_t start = 2;
+	configure_i2c_master();
+	TimerStart(&bme280Timer, BME280_TIMEOUT);
+	while( InitBME280() != BME280_OK ){};
+	TimerStop(&bme280Timer);
+	(bme280.delay_ms)(500);
+	/* Continuously stream sensor data */
+	for (;;)
+	{
+		measureADC();
+		(bme280.delay_ms)(130);
+		/* Wait for the measurement to complete and print data*///rslt = bme280_set_sensor_mode(BME280_FORCED_MODE, &bme280);
+		TimerStart(&bme280Timer, BME280_TIMEOUT);
+		while( GetDataBME280() != BME280_OK ){};
+		TimerStop(&bme280Timer);
+		if( error_BME280==1 )
+		{
+			TimerStart(&bme280Timer, BME280_TIMEOUT);
+			while( InitBME280() != BME280_OK ){};
+			while( GetDataBME280() != BME280_OK ){};
+			TimerStop(&bme280Timer);
+			error_BME280=0;
+		}
+		
+		sensor.Hum1	= comp_data.humidity/1024;
+		sensor.Hum =  comp_data.humidity/1024;
+		sensor.Temp	= (float)comp_data.temperature/100;
+		dewPoint = round(DewPoint(sensor.Temp, sensor.Hum));
+		
+		if (comp_data.pressure >= 3000000 && comp_data.pressure <= 11000000 && comp_pres >= 30000 && comp_pres <= 110000)
+		{
+			int16_t pressCalc = comp_data.pressure/10000-comp_pres/100;
+			
+			if (pressCalc < 0 && pressCalc >= -20)
+			{
+				sensor.Press = 0;
+			}
+			else if	(pressCalc >= 200 || pressCalc < -20)
+			{
+				#ifdef DEBUG
+				__BKPT();
+				#endif
+				NVIC_SystemReset();
+			}
+			else
+			sensor.Press= pressCalc;
+		}
+		else if (start<=0)
+		{
+			#ifdef DEBUG
+			__BKPT();
+			#endif
+			NVIC_SystemReset();
+		}
+		
+		if (start==0 )
+		{
+			start--;
+		}
+		else if (start>0)
+		{
+			sensor.Press=0;
+			start--;
+		}
+		#ifndef DEBUG
+		WDT_0_reset();
+		#endif
+	}
+}
+/************************************************************************
+* \fn void InitTask_BME280(void)
+* \brief
+* \param
+* \return
+************************************************************************/
+void InitTask_BME280(void)
+{
+	xTaskCreate(vBME280_task, (const char*)"BME280_task", 2*configMINIMAL_STACK_SIZE, NULL, 1, &pxBME280Task);
 }
 
+/*! \brief TimerCallback procedure
+ *         If xTimer is timed out then this procedure 
+ *  \param Not Used.
+ */
+/*static void vTimerBME280Callback(void)//( xTimerHandle xTimerBME280 )
+{		
+	if (!error_BME280)
+		error_BME280 = true;			
 
+	if (!BME280_ExpireCounter--)		
+		NVIC_SystemReset();	
+}*/
+#endif //BME280_TASK
 
+//#ifdef UI_EXAMPLE
 
 void main_suspend_action(void)
 {
@@ -351,6 +754,11 @@ void main_cdc_set_dtr(uint8_t port, bool b_enable)
 		printf("main_cdc_set_dtr(): %d\r\n", b_enable);
 	}
 }
+//#endif //UI_EXAMPLE
+float GetTecCurrent(float v_cs, float v_ref, float r_cs, float gain)
+{
+	return ((v_cs - v_ref)/(r_cs*gain));
+}
 
 void led_configure_port_pins(void)
 {
@@ -361,6 +769,69 @@ void led_configure_port_pins(void)
 	port_pin_set_config(LED_PIN, &config_port_pin);
 }
 
+void	make_float2str(char * str, uint16_t len, float	value)
+{
+	bool neg_flag;
+	if(value >= 0)
+	neg_flag = false;
+	else{
+		neg_flag = true;
+		value = value * -1;
+	}
+	
+	int a1 = value;
+	int	a2 = (value - a1)*100.0;
+	snprintf(str, len, "%c%02d.%2.2d",neg_flag?'-':'+', a1, a2);
+}
+
+float GetMovAvg(MOV_AVG_BUF *buf, float tempr, bool x10)
+{	
+	float sum;
+	if(tempr>=tErrors)
+	{
+		buf->bufFull=0;
+		return tempr;
+	}
+	if(!buf->bufFull)
+	{
+		for(uint8_t i=0;i<T_AVG_BUF_SIZE;i++)	
+			buf->avgBuf[i]=tempr;
+		buf->bufFull=1;
+	}
+	else
+	{
+		buf->avgBuf[buf->idx++]=tempr;
+		if(buf->idx>=T_AVG_BUF_SIZE)	buf->idx=0;
+	}
+	
+	sum=0;
+	for(uint8_t i=0;i<T_AVG_BUF_SIZE;i++)
+		sum+=buf->avgBuf[i];
+	sum/=T_AVG_BUF_SIZE;
+	if(x10)	return (sum+5)/10;
+	else return sum;
+}
+
+
+/************************************************************************
+* \fn void vApplicationTickHook( void )
+* \brief
+* \param
+* \return
+************************************************************************/
+void vApplicationTickHook( void );
+void vApplicationTickHook( void )
+{
+	static portTickType delay_1s = 500;
+	if(!delay_1s--)
+	{
+		LED_Toggle(LED_PIN);
+		delay_1s = 500;
+	}
+#ifdef BME280_TASK
+	BME280Timer_Handler();
+#endif	
+}
 /************************************************************************
 * \fn void vApplicationMallocFailedHook (void)
 * \brief

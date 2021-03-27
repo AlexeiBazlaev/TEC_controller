@@ -98,9 +98,9 @@ void stdio_usb_init(void)
 # endif
 # if UC3 || SAM
 	// For AVR32 and SAM GCC
-	// Specify that stdout and stdin should not be buffered.
-	setbuf(stdout, NULL);	
-	setbuf(stdin, NULL);//setvbuf(stdin, rcvBuff, _IOLBF, 128);//setbuf(stdin, rcvBuff);////extern char rcvBuff[128];
+	// Specify that stdout and stdin should not be buffered.	
+	setvbuf(stdout, NULL, _IONBF, 0);//setbuf(stdout, NULL);//	
+	setvbuf(stdin, NULL, _IONBF, 0);//setbuf(stdin, NULL);//setvbuf(stdin, rcvBuff, _IOLBF, 128);//setbuf(stdin, rcvBuff);////extern char rcvBuff[128];
 	// Note: Already the case in IAR's Normal DLIB default configuration
 	// and AVR GCC library:
 	// - printf() emits one character at a time.

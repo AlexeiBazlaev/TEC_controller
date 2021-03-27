@@ -36,14 +36,22 @@
 
 #ifndef _MAIN_H_
 #define _MAIN_H_
-
+#include <asf.h>
 #include "usb_protocol_cdc.h"
 
-#define CURRENT_SENSE_RESISTENCE 0.005f
+//#define USE_SEMAPHORE
+#define R_CS 0.005f
 #define TEC_TEMP_MAX	35.0f
 #define TEC_TEMP_MIN	5.0f
+#define TEC_TEMP_SETPOINT_MAX	30.0f
+#define TEC_TEMP_SETPOINT_MIN	10.0f
+#define TEC_POWER_COEFF_SETPOINT_MAX	100.0f
+#define TEC_POWER_COEFF_SETPOINT_MIN	1.0f
 #define TEC_TEMP_NORM	25.0f
+#define MAX_STR_FLOAT	12
+#define T_AVG_BUF_SIZE	16
 
+#define tErrors			255
 typedef struct measured_params{
 	float	TEC_Temp;
 	float	MCU_Temp;
@@ -51,16 +59,21 @@ typedef struct measured_params{
 	float	Vin_SFB;
 	float	Vin_CS;
 	float	DHT22_Temp;
-	float	DHT22_Hum;
+	float	DHT22_Hum;	 
 	float	DS1820_Temp;
 	float	TEC_Power;
+	
+	//uint32_t DHT22_comError;
+	//uint32_t DHT22_dataError;
 }measured_params_t;
 
 typedef struct  
 {
-	float	TEC_Temp;
-	float	MCU_Temp;
+	float	tecCamSide;
+	float	tecRadSide;
 	float	DHT22_Temp;
+	float	DHT22_Hum;
+	float	dewPoint;
 	float	DS1820_Temp;
 } Temperatures_t;
 
@@ -69,31 +82,66 @@ typedef struct
 	float tecV_P;
 	float tecV_N;
 	float tecI;
+	float tecPower;
+	int	  tecToggleCntr;
 } TecState_t;
 
 typedef struct  
 {
+	float tempTecCamSide;
+	float tempTecRadSide;
+	float powerCoeff;
+} SetPoints_t;
+
+typedef struct  
+{	
 	Temperatures_t temps;	
 	TecState_t tecState;
+	SetPoints_t setPoints;
+#ifdef USE_SEMAPHORE	
+	xSemaphoreHandle dataSem;
+#endif	
 } Controller_t;
 
+typedef struct
+{
+	float avgBuf[T_AVG_BUF_SIZE];
+	U32 idx;
+	U8 bufFull;
+} MOV_AVG_BUF;
+
+
 void prvGetRegistersFromStack (uint32_t *pulFaultStackAddress);
-void led_configure_port_pins(void);
 void vApplicationMallocFailedHook (void);
 void vApplicationStackOverflowHook (void);
+
+void led_configure_port_pins(void);
+
 void Task_cdc_rx(void *parameters);
 void Task_cdc_tx(void *parameters);
 void Task_led_blink(void *parameters);
 void Task_measure(void *parameters);
+void Task_measure_DHT22(void *parameters);
 void Task_regulator(void *parameters);
 void Task_backlight(void *parameters);
+
+void InitMCU(void);
+void ExecuteCommands(void);
+void measureADC(MOV_AVG_BUF *movAvgBuf);
+float GetMovAvg(MOV_AVG_BUF *buf, float tempr, bool x10);
+void InitTask_BME280(void);
 void InitTask_backlight(void);
 void InitTask_cdc_rx(void);
 void InitTask_led_blink(void);
 void InitTask_regulator(void);
 void InitTask_measure(void);
 void InitTask_cdc_rx_tx(void);
-
+void InitTask_measure_DHT22(void);
+void make_float2str(char * str, uint16_t len, float	value);
+float GetTecCurrent(float v_cs, float v_ref, float r_cs, float gain);
+void ReadEEParameters(void);
+void DataLock(void);
+void DataUnlock(void);
 /*! \brief Opens the communication port
  * This is called by CDC interface when USB Host enable it.
  *

@@ -41,6 +41,7 @@
 //#define CONF_BOARD_USB_VBUS_DETECT
 //temp-ctrl-v1.0b
 #define	LED_PIN		PIN_PA28
+#define PIN_USB_RESET	PIN_PA27
 #define LED0_PIN	LED_PIN
 #define	TC_TMPGD	PIN_PA01
 
@@ -67,5 +68,10 @@
 #define PIN_RS_POWER	PIN_PA00
 #define RS_POWER_DEFAULT	true
 #define TEC_POWER_DEFAULT	true
+#define CONF_I2C_MASTER_MODULE    SERCOM2
+
+#define ADC_MULTIPLIER 3.67f
+#define V_REF 1.24f
+#define AMP_GAIN 20.0f
 
 #endif /* CONF_BOARD_H_INCLUDED */

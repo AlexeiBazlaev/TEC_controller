@@ -102,18 +102,14 @@ void backlight_mode_demo(void){
 }
 
 void backlight_init(void){
-	mode = mode_none;
-//	memset(led_data, 0, sizeof(led_data));
-	backlight_color_show(0,0,0);
-//	for(uint16_t i=0; i < LEN_WS2812*3; i++){
-//		printf("%d: %d\r\n", i, (int)led_data[i]);
-//	}
+	mode = mode_none;	
+	backlight_color_show(0,0,0);	
 }
 
 void backlight_ws2812_sendarray(void){
-	portENTER_CRITICAL();//cpu_irq_disable(); 
+	portENTER_CRITICAL();
 	ws2812_sendarray(led_data,sizeof(led_data));
-	portEXIT_CRITICAL();//cpu_irq_enable();	
+	portEXIT_CRITICAL();
 }
 
 void backlight_color_show(uint8_t R, uint8_t G, uint8_t B){
@@ -122,7 +118,6 @@ void backlight_color_show(uint8_t R, uint8_t G, uint8_t B){
 		led_data[0 + i*3] = G;
 		led_data[1 + i*3] = R;
 		led_data[2 + i*3] = B;
-//		printf("%d: R: %d, G: %d, B: %d\r\n",(int)i, (int)led_data[1 + i*3], (int)led_data[0 + i*3], (int)led_data[2 + i*3]);
 	}
 	backlight_ws2812_sendarray();	
 }
