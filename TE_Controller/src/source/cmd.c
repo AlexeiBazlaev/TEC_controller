@@ -27,7 +27,7 @@ const char sCmdRsOff[]		= "cmd_rs_off";
 const char sCmdTecOn[]		= "cmd_tec_on";
 const char sCmdTecOff[]		= "cmd_tec_off";
 const char sCmdSetTemp[]	= "cmd_set_temp";
-const char sCmdSetPow[]	= "cmd_set_pow";
+const char sCmdSetPow[]		= "cmd_set_pow";
 const char sCmdUsbReset[]	= "cmd_usb_reset";
 
 const char sCmdGetData[]	= "cmd_get_data";
