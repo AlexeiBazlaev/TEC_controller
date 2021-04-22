@@ -59,24 +59,6 @@ enum status_code WriteEEParam(uint16_t *param_new, uint16_t param_min, uint16_t 
 	return STATUS_ERR_INVALID_ARG;
 }
 
-/*enum status_code WriteEEParam(double *param, double *param_new, uint16_t param_min, uint16_t param_max, uint16_t ee_tag, size_t size)
-{
-	if(*param == *param_new) return STATUS_OK;
-	if (param_min <= *param_new && *param_new <= param_max)
-	{
-		enum status_code ret = rww_eeprom_emulator_write_buffer(ee_tag, (uint8_t*)param_new, size);
-		if( ret == STATUS_OK )
-		{
-			ret = rww_eeprom_emulator_commit_page_buffer();
-			if( ret == STATUS_OK )
-			{
-				*param = *param_new;
-			}
-		}
-		return ret;
-	}
-	return STATUS_ERR_INVALID_ARG;
-}*/
 
 #if (SAMD || SAMR21)
 void SYSCTRL_Handler(void)

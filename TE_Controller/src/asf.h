@@ -160,4 +160,7 @@
 #include <udc.h>
 #include <udd.h>
 
+// From module: WDT - Watchdog Timer (Polled APIs)
+#include <wdt.h>
+
 #endif // ASF_H

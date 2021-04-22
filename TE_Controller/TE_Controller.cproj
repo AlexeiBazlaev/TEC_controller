@@ -43,6 +43,7 @@
           <option id="sam0.drivers.tcc" value="Add" config="polled" content-id="Atmel.ASF" />
           <option id="sam0.services.rww_eeprom_emulator" value="Add" config="" content-id="Atmel.ASF" />
           <option id="thirdparty.os.freertos.version" value="Add" config="10.0.0" content-id="Atmel.ASF" />
+          <option id="sam0.drivers.wdt" value="Add" config="polled" content-id="Atmel.ASF" />
           <option id="common.services.usb.class.cdc.device.example" value="Add" config="" content-id="Atmel.ASF" />
           <option id="common.utils" value="Add" config="" content-id="Atmel.ASF" />
           <option id="sam0.utils.cmsis.samd21.source.template" value="Add" config="" content-id="Atmel.ASF" />
@@ -346,6 +347,12 @@
           <file path="src/ASF/sam0/drivers/tc/tc_interrupt.h" framework="" version="3.49.1" source="sam0\drivers\tc\tc_interrupt.h" changed="False" content-id="Atmel.ASF" />
           <file path="src/ASF/sam0/drivers/tc/tc.h" framework="" version="3.49.1" source="sam0\drivers\tc\tc.h" changed="False" content-id="Atmel.ASF" />
           <file path="src/ASF/sam0/drivers/tc/tc_sam_d_r_h/tc.c" framework="" version="3.49.1" source="sam0\drivers\tc\tc_sam_d_r_h\tc.c" changed="False" content-id="Atmel.ASF" />
+          <file path="src/ASF/sam0/drivers/wdt/wdt.c" framework="" version="3.49.1" source="sam0\drivers\wdt\wdt.c" changed="False" content-id="Atmel.ASF" />
+          <file path="src/ASF/sam0/drivers/wdt/wdt_callback.h" framework="" version="3.49.1" source="sam0\drivers\wdt\wdt_callback.h" changed="False" content-id="Atmel.ASF" />
+          <file path="src/ASF/sam0/drivers/wdt/wdt.h" framework="" version="3.49.1" source="sam0\drivers\wdt\wdt.h" changed="False" content-id="Atmel.ASF" />
+          <file path="src/ASF/sam0/drivers/wdt/quick_start/qs_wdt_basic.h" framework="" version="3.49.1" source="sam0\drivers\wdt\quick_start\qs_wdt_basic.h" changed="False" content-id="Atmel.ASF" />
+          <file path="src/ASF/sam0/drivers/wdt/quick_start_callback/qs_wdt_callback.h" framework="" version="3.49.1" source="sam0\drivers\wdt\quick_start_callback\qs_wdt_callback.h" changed="False" content-id="Atmel.ASF" />
+          <file path="src/ASF/sam0/drivers/wdt/wdt_callback.c" framework="" version="3.49.1" source="sam0\drivers\wdt\wdt_callback.c" changed="False" content-id="Atmel.ASF" />
         </files>
         <documentation help="https://asf.microchip.com/docs/3.49.1/common.services.usb.class.cdc.device.example.samd21_xpro/html/index.html" />
         <offline-documentation help="" />
@@ -397,6 +404,7 @@
       <Value>ADC_CALLBACK_MODE=true</Value>
       <Value>TCC_ASYNC=false</Value>
       <Value>TC_ASYNC=true</Value>
+      <Value>WDT_CALLBACK_MODE=false</Value>
     </ListValues>
   </armgcc.compiler.symbols.DefSymbols>
   <armgcc.compiler.directories.IncludePaths>
@@ -448,6 +456,7 @@
       <Value>../src/ASF/sam0/services/eeprom/emulator/rwwee_array</Value>
       <Value>../src/ASF/sam0/drivers/tc</Value>
       <Value>../src/ASF/sam0/drivers/tc/tc_sam_d_r_h</Value>
+      <Value>../src/ASF/sam0/drivers/wdt</Value>
     </ListValues>
   </armgcc.compiler.directories.IncludePaths>
   <armgcc.compiler.optimization.level>Optimize for size (-Os)</armgcc.compiler.optimization.level>
@@ -518,9 +527,10 @@
       <Value>../src/ASF/sam0/services/eeprom/emulator/rwwee_array</Value>
       <Value>../src/ASF/sam0/drivers/tc</Value>
       <Value>../src/ASF/sam0/drivers/tc/tc_sam_d_r_h</Value>
+      <Value>../src/ASF/sam0/drivers/wdt</Value>
     </ListValues>
   </armgcc.assembler.general.IncludePaths>
-  <armgcc.preprocessingassembler.general.AssemblerFlags>-DARM_MATH_CM0PLUS=true -DBOARD=SAMD21_XPLAINED_PRO -DEXTINT_CALLBACK_MODE=true -DUDD_ENABLE -DUSART_CALLBACK_MODE=true -DUSB_DEVICE_LPM_SUPPORT -D__SAMD21J18A__ -D__FREERTOS__ -DSYSTICK_MODE -DADC_CALLBACK_MODE=true -DTCC_ASYNC=false -DTC_ASYNC=true</armgcc.preprocessingassembler.general.AssemblerFlags>
+  <armgcc.preprocessingassembler.general.AssemblerFlags>-DARM_MATH_CM0PLUS=true -DBOARD=SAMD21_XPLAINED_PRO -DEXTINT_CALLBACK_MODE=true -DUDD_ENABLE -DUSART_CALLBACK_MODE=true -DUSB_DEVICE_LPM_SUPPORT -D__SAMD21J18A__ -D__FREERTOS__ -DSYSTICK_MODE -DADC_CALLBACK_MODE=true -DTCC_ASYNC=false -DTC_ASYNC=true -DWDT_CALLBACK_MODE=false</armgcc.preprocessingassembler.general.AssemblerFlags>
   <armgcc.preprocessingassembler.general.IncludePaths>
     <ListValues>
       <Value>../src</Value>
@@ -570,6 +580,7 @@
       <Value>../src/ASF/sam0/services/eeprom/emulator/rwwee_array</Value>
       <Value>../src/ASF/sam0/drivers/tc</Value>
       <Value>../src/ASF/sam0/drivers/tc/tc_sam_d_r_h</Value>
+      <Value>../src/ASF/sam0/drivers/wdt</Value>
     </ListValues>
   </armgcc.preprocessingassembler.general.IncludePaths>
 </ArmGcc>
@@ -598,6 +609,7 @@
       <Value>TCC_ASYNC=false</Value>
       <Value>TC_ASYNC=true</Value>
       <Value>ARM_PID</Value>
+      <Value>WDT_CALLBACK_MODE=false</Value>
     </ListValues>
   </armgcc.compiler.symbols.DefSymbols>
   <armgcc.compiler.directories.IncludePaths>
@@ -650,6 +662,7 @@
       <Value>../src/ASF/sam0/services/eeprom/emulator/rwwee_array</Value>
       <Value>../src/ASF/sam0/drivers/tc</Value>
       <Value>../src/ASF/sam0/drivers/tc/tc_sam_d_r_h</Value>
+      <Value>../src/ASF/sam0/drivers/wdt</Value>
     </ListValues>
   </armgcc.compiler.directories.IncludePaths>
   <armgcc.compiler.optimization.level>Optimize for size (-Os)</armgcc.compiler.optimization.level>
@@ -722,10 +735,11 @@
       <Value>../src/ASF/sam0/services/eeprom/emulator/rwwee_array</Value>
       <Value>../src/ASF/sam0/drivers/tc</Value>
       <Value>../src/ASF/sam0/drivers/tc/tc_sam_d_r_h</Value>
+      <Value>../src/ASF/sam0/drivers/wdt</Value>
     </ListValues>
   </armgcc.assembler.general.IncludePaths>
   <armgcc.assembler.debugging.DebugLevel>Default (-g)</armgcc.assembler.debugging.DebugLevel>
-  <armgcc.preprocessingassembler.general.AssemblerFlags>-DARM_MATH_CM0PLUS=true -DBOARD=USER_BOARD -DEXTINT_CALLBACK_MODE=true -DUDD_ENABLE -DUSART_CALLBACK_MODE=true -DUSB_DEVICE_LPM_SUPPORT -D__SAMD21E16B__ -D__FREERTOS__ -DSYSTICK_MODE -DADC_CALLBACK_MODE=true -DTCC_ASYNC=false -DTC_ASYNC=true</armgcc.preprocessingassembler.general.AssemblerFlags>
+  <armgcc.preprocessingassembler.general.AssemblerFlags>-DARM_MATH_CM0PLUS=true -DBOARD=USER_BOARD -DEXTINT_CALLBACK_MODE=true -DUDD_ENABLE -DUSART_CALLBACK_MODE=true -DUSB_DEVICE_LPM_SUPPORT -D__SAMD21E16B__ -D__FREERTOS__ -DSYSTICK_MODE -DADC_CALLBACK_MODE=true -DTCC_ASYNC=false -DTC_ASYNC=true -DWDT_CALLBACK_MODE=false</armgcc.preprocessingassembler.general.AssemblerFlags>
   <armgcc.preprocessingassembler.general.IncludePaths>
     <ListValues>
       <Value>../src</Value>
@@ -775,6 +789,7 @@
       <Value>../src/ASF/sam0/services/eeprom/emulator/rwwee_array</Value>
       <Value>../src/ASF/sam0/drivers/tc</Value>
       <Value>../src/ASF/sam0/drivers/tc/tc_sam_d_r_h</Value>
+      <Value>../src/ASF/sam0/drivers/wdt</Value>
     </ListValues>
   </armgcc.preprocessingassembler.general.IncludePaths>
   <armgcc.preprocessingassembler.debugging.DebugLevel>Default (-Wa,-g)</armgcc.preprocessingassembler.debugging.DebugLevel>
@@ -842,6 +857,8 @@
     <Folder Include="src\ASF\sam0\drivers\usb\" />
     <Folder Include="src\ASF\sam0\drivers\usb\stack_interface\" />
     <Folder Include="src\ASF\sam0\drivers\usb\usb_sam_d_r\" />
+    <Folder Include="src\ASF\sam0\drivers\wdt\" />
+    <Folder Include="src\ASF\sam0\drivers\wdt\quick_start\" />
     <Folder Include="src\ASF\sam0\services\" />
     <Folder Include="src\ASF\sam0\services\eeprom\" />
     <Folder Include="src\ASF\sam0\services\eeprom\emulator\" />
@@ -955,6 +972,15 @@
     <Compile Include="src\ASF\sam0\drivers\tc\tc_sam_d_r_h\tc.c">
       <SubType>compile</SubType>
     </Compile>
+    <None Include="src\ASF\sam0\drivers\wdt\quick_start\qs_wdt_basic.h">
+      <SubType>compile</SubType>
+    </None>
+    <Compile Include="src\ASF\sam0\drivers\wdt\wdt.c">
+      <SubType>compile</SubType>
+    </Compile>
+    <None Include="src\ASF\sam0\drivers\wdt\wdt.h">
+      <SubType>compile</SubType>
+    </None>
     <Compile Include="src\ASF\sam0\services\eeprom\emulator\rwwee_array\rww_eeprom.c">
       <SubType>compile</SubType>
     </Compile>

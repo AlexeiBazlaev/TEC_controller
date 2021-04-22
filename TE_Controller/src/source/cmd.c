@@ -36,7 +36,7 @@ const char sCmdTxOff[]		= "cmd_tx_off";
 
 const char sReplyOk[]		= "OK";
 const char sReplyErr[]		= "Error";
-const char delim[]			= " ,;=:\n";
+const char delim[]			= " ,;=:\r\n";
 
 extern Controller_t Controller;
 CMD_t command = 
@@ -130,7 +130,7 @@ __STATIC_INLINE bool ReadPowerValue(float *powerSetpoint)
 	}
 	return false;
 }
-
+//__attribute__((optimize("O0")))
 __STATIC_INLINE uint8_t ReadFloatValue(float *value, uint16_t valMin, uint16_t valMax, uint16_t ee_tag)
 {
 	const char *txtVal = strtok(NULL, delim);
@@ -154,7 +154,7 @@ extern arm_pid_instance_f32  pid;
 #else
 extern PID_t pid;
 #endif
-__attribute__((optimize("O3")))
+//__attribute__((optimize("O0")))
 void ProcessCommand(CMD_t *cmd, char* str)
 {
 	char *token = strtok(str, delim);
@@ -189,9 +189,7 @@ void ProcessCommand(CMD_t *cmd, char* str)
 		else if (strcasecmp(token, sCmdSetTemp) == 0)
 		{	temp = ReadFloatValue((float*)&Controller.setPoints.tempTecCamSide, TEC_TEMP_SETPOINT_MIN, TEC_TEMP_SETPOINT_MAX, EE_TEMP_SETPOINT);}
 		else if (strcasecmp(token, sCmdSetPow) == 0)
-		{	power = ReadFloatValue((float*)&Controller.setPoints.powerCoeff, TEC_POWER_COEFF_SETPOINT_MIN, TEC_POWER_COEFF_SETPOINT_MAX, EE_POWER_SETPOINT);}
-		/*else if (strcasecmp(token, sCmdSetTemp) == 0 && (temp = ReadTempValue(&Controller.setPoints.tempTecCamSide))){}
-		else if (strcasecmp(token, sCmdSetPow) == 0 && (power = ReadPowerValue(&Controller.setPoints.powerCoeff))){}*/
+		{	power = ReadFloatValue((float*)&Controller.setPoints.powerCoeff, TEC_POWER_COEFF_SETPOINT_MIN, TEC_POWER_COEFF_SETPOINT_MAX, EE_POWER_SETPOINT);}		
 		else if (strcasecmp(token, sCmdTxOff) == 0)
 			cmd->tx_on	= DISABLE;
 		else if (strcasecmp(token, sCmdTxOn) == 0)

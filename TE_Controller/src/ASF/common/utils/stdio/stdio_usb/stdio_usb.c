@@ -79,7 +79,7 @@ void stdio_usb_disable(void)
 }
 
 void stdio_usb_init(void)
-{
+{	
 	stdio_base = NULL;
 	ptr_put = stdio_usb_putchar;
 	ptr_get = stdio_usb_getchar;

@@ -50,6 +50,7 @@
 #define TEC_TEMP_NORM	25.0f
 #define MAX_STR_FLOAT	12
 #define T_AVG_BUF_SIZE	16
+#define BUF_LEN 64
 
 #define tErrors			255
 typedef struct measured_params{

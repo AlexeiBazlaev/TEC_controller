@@ -44,9 +44,7 @@
 #include "cmd.h"
 #include "usb_hub.h"
 #include "eeprom.h"
-//#include "mcu_control.h"
-//#include "adn8831.h"
-//#include "tm_ds18b20.h"
+
 
 #define PORT_STDIO	0
 #define PORT_DATA	1
@@ -54,7 +52,6 @@ extern CMD_t command;
 uint16_t adc_value = 100;
 
 static volatile bool main_b_cdc_enable = false;
-//struct measured_params	m_params;
 Controller_t Controller;
 
 #ifdef ARM_PID
@@ -72,7 +69,7 @@ UBaseType_t uxHighWaterMark_cdc_rx, uxHighWaterMark_cdc_tx, uxHighWaterMark_meas
 uxHighWaterMark_regulator, uxHighWaterMark_backlight;
 #define GET_STACK_HWM_CDC_RX()    uxHighWaterMark_cdc_rx	= uxTaskGetStackHighWaterMark( NULL );
 #define GET_STACK_HWM_CDC_TX()    uxHighWaterMark_cdc_tx	= uxTaskGetStackHighWaterMark( NULL );
-#define GET_STACK_HWM_MEASURE()	  uxTaskGetStackHighWaterMark( NULL );
+#define GET_STACK_HWM_MEASURE()	  uxHighWaterMark_measure   = uxTaskGetStackHighWaterMark( NULL );
 #define GET_STACK_HWM_REGULATOR() uxHighWaterMark_regulator = uxTaskGetStackHighWaterMark( NULL );
 #define GET_STACK_HWM_BACKLIGHT() uxHighWaterMark_backlight = uxTaskGetStackHighWaterMark( NULL );
 #else
@@ -83,6 +80,11 @@ uxHighWaterMark_regulator, uxHighWaterMark_backlight;
 #define GET_STACK_HWM_BACKLIGHT()
 #endif
 
+#ifndef DEBUG_WDT
+	#define WDT_RESET() wdt_reset_count();
+#else
+	#define WDT_RESET()	
+#endif
 /************************************************************************
 * \fn int main(void)
 * \brief Main function. Execution starts here.
@@ -93,12 +95,11 @@ int main(void)
 {
 	irq_initialize_vectors();
 	cpu_irq_enable();	
-	//sleepmgr_init();
 	system_init();	
 	InitMCU();
 		
 	InitTask_cdc_rx_tx();	
-	InitTask_measure(); //InitTask_measure_DHT22();InitTask_led_blink();//ui_init();//ui_powerdown();
+	InitTask_measure();
 	InitTask_regulator();	
 #ifndef DEBUG_REGULATOR	
 	InitTask_backlight();
@@ -135,7 +136,14 @@ void ReadEEParameters(void)
 * \return
 ************************************************************************/
 void InitMCU(void)
-{	
+{
+#ifndef DEBUG_WDT
+	struct wdt_conf wdt_config;
+	wdt_get_config_defaults(&wdt_config);
+	wdt_config.clock_source		= GCLK_GENERATOR_2;		
+	if(wdt_set_config(&wdt_config) == STATUS_OK)
+		wdt_reset_count();
+#endif		
 	led_configure_port_pins();
 	LED_Off(LED_PIN);	
 	configure_eeprom();
@@ -196,7 +204,8 @@ void Task_measure(void *parameters)
 	};	
 	GET_STACK_HWM_MEASURE()
 	for (;;)
-	{	
+	{
+		WDT_RESET();		
 		if(command.tot_on)
 		{						
 			measureADC(&tecCamSideTempAvg);		
@@ -236,10 +245,12 @@ void Task_regulator(void *parameters)
 #ifndef ARM_PID
 	temprChange_t change;
 	change.initialized = false;	
-#endif				 
+#endif
+	TEC_Init();				 
 	GET_STACK_HWM_REGULATOR();
 	for (;;)
 	{	
+		WDT_RESET();
 		DataLock();			
 		TempPID_Regulator(command.tec_on && command.tot_on, &Controller, &pid);		
 		DataUnlock();	
@@ -255,29 +266,74 @@ void Task_regulator(void *parameters)
 * \param
 * \return
 ************************************************************************/
+#ifndef DEBUG_RX
+__attribute__((optimize("Os")))
+void Task_cdc_rx(void *parameters)
+{
+	#define PORT0  0	
+	iram_size_t len = 0;
+	static size_t totLen = 0;
+	static char readBuf[BUF_LEN] = {0};
+	static char tmpBuf[BUF_LEN] = {0};
+	GET_STACK_HWM_CDC_RX();	
+	while(true)
+	{
+		WDT_RESET();
+		if(main_b_cdc_enable &&
+		(len = udi_cdc_multi_get_nb_received_data(PORT0)) > 0 &&
+		udi_cdc_read_no_polling(tmpBuf, (len<=BUF_LEN)?len:BUF_LEN) > 0)
+		{
+			totLen += len;
+			if(totLen <= BUF_LEN)
+			{
+				strcat(readBuf, tmpBuf);
+				memset(tmpBuf,0,len);
+			}
+			else
+			{
+				totLen = BUF_LEN;
+				readBuf[totLen-1] = '\r';				
+			}
+			 						
+			if(readBuf[totLen-1] == '\r' || readBuf[totLen-1] == '\n')// || readBuf[totLen-2] == '\r' || readBuf[totLen-2] == '\n')			
+			{			
+				readBuf[totLen-1]=0;
+				DataLock();
+				ProcessCommand(&command, readBuf);
+				ExecuteCommands();					
+				DataUnlock();
+				memset(readBuf,0,totLen);
+				totLen = 0;
+			}
+		}
+		GET_STACK_HWM_CDC_RX();
+	}
+}
+#else
 __attribute__((optimize("Os")))
 void Task_cdc_rx(void *parameters)
 {
 	#define PORT0  0
 	iram_size_t len = 0;
-	char readBuf[128] = {0};
-	GET_STACK_HWM_CDC_RX();	
+	static char readBuf[BUF_LEN] = {0};
+	GET_STACK_HWM_CDC_RX();
 	while(true)
 	{
+		WDT_RESET();
 		if(main_b_cdc_enable &&
-		(len = udi_cdc_multi_get_nb_received_data(PORT0)) > 0 &&
-		udi_cdc_read_no_polling(readBuf, (len<=128)?len:128) > 0 )
-		{			
-			readBuf[len]=0; //if (udi_cdc_multi_is_tx_ready(PORT0))	printf("\r\n< %s", readBuf);
+		(len = udi_cdc_multi_get_nb_received_data(PORT0)) >0 &&
+		udi_cdc_read_no_polling(readBuf, (len<=BUF_LEN)?len:BUF_LEN) > 0)
+		{
+			readBuf[len]=0;
 			DataLock();
 			ProcessCommand(&command, readBuf);
-			ExecuteCommands();					
+			ExecuteCommands();
 			DataUnlock();
 		}
 		GET_STACK_HWM_CDC_RX();
 	}
 }
-
+#endif
 
 /************************************************************************
 * \fn void Task_cdc_tx(void *parameters)
@@ -292,6 +348,7 @@ void Task_cdc_tx(void *parameters)
 	GET_STACK_HWM_CDC_TX();	
 	while(true)
 	{
+		WDT_RESET();
 		vTaskDelay(1000);			
 		if (main_b_cdc_enable && udi_cdc_multi_is_tx_ready(PORT0) && (command.tx_on || command.get_data) && command.tot_on)
 		{
@@ -375,24 +432,28 @@ void Task_cdc_tx(void *parameters)
 void Task_backlight(void *parameters)
 {
 	uint32_t cnt10 = 0, rgb = 0x00000000;
-	uint8_t bl_state = CMD_OFF;	
+	uint8_t bl_state = CMD_BL_RESET;	
 	GET_STACK_HWM_BACKLIGHT();
 	while(1)
-	{
-		vTaskDelay(500);
-										
-		if(!command.tot_on)
+	{	
+		WDT_RESET();											
+		if(!command.tot_on || bl_state == CMD_BL_RESET)
 		{
 			bl_state = CMD_BL_RESET;
-			backlight_color_show(0, 0, 0);
-		} 
+			backlight_color_show(0, 0, 0);			
+			vTaskDelay(1000);			
+		}		
 		if( bl_state != command.bl_state || rgb != command.rgb_color.rgb)
 		{
 			bl_state = command.bl_state;
-			rgb = command.rgb_color.rgb;			
+			rgb = command.rgb_color.rgb;						
 		}		
-		else continue;
-		
+		else 
+		{
+			vTaskDelay(200);
+			continue;
+		}
+					
 		if(bl_state >= CMD_BL_RESET && bl_state <= CMD_BL_DEMO && command.tot_on)
 		{			
 			uint8_t brightness = (command.rgb_color.color.brightness)&0xFF;			
@@ -451,7 +512,7 @@ void InitTask_cdc_rx_tx(void)
 	stdio_usb_init();
 	stdio_usb_enable();	
 #ifndef DEBUG_REGULATOR	
-	xTaskCreate(Task_cdc_rx, (const char*)"Task_cdc_rx", configMINIMAL_STACK_SIZE*4, NULL,configMAX_PRIORITIES-1, NULL);		
+	xTaskCreate(Task_cdc_rx, (const char*)"Task_cdc_rx", configMINIMAL_STACK_SIZE*3, NULL,configMAX_PRIORITIES-1, NULL);		
 	xTaskCreate(Task_cdc_tx, (const char*)"Task_cdc_tx", configMINIMAL_STACK_SIZE*3, NULL,configMAX_PRIORITIES-1, NULL);
 #endif	
 }
@@ -840,6 +901,10 @@ void vApplicationTickHook( void )
 ************************************************************************/
 void vApplicationMallocFailedHook (void) 
 {
+	#ifdef DEBUG
+	__BKPT();
+	#endif
+	NVIC_SystemReset();
 	while (1)
 	{
 		__BKPT();
@@ -854,6 +919,10 @@ void vApplicationMallocFailedHook (void)
 ************************************************************************/
 void vApplicationStackOverflowHook (void) 
 {
+	#ifdef DEBUG
+	__BKPT();
+	#endif
+	NVIC_SystemReset();
 	while (1)
 	{
 		__BKPT();
